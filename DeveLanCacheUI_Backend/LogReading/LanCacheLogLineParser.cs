@@ -19,12 +19,13 @@ namespace DeveLanCacheUI_Backend.LogReading
             // Skip tokens[3] as it's '-' character
             // Skip tokens[4] as it's '-' character
             // Skip tokens[5] as it's '-' character
-            entry.DateTime = DateTime.ParseExact(tokens[6].TrimStart('[').TrimEnd(']'), "dd/MMM/yyyy:HH:mm:ss zzz", CultureInfo.InvariantCulture);
+            var trimmedDateTime = (tokens[6] + ' ' + tokens[7]).TrimStart('[').TrimEnd(']');
+            entry.DateTime = DateTime.ParseExact(trimmedDateTime, "dd/MMM/yyyy:HH:mm:ss zzz", CultureInfo.InvariantCulture);
 
-            var requestTokens = tokens[7].TrimStart('"').TrimEnd('"').Split(' ');
-            entry.Method = requestTokens[0];
-            entry.Uri = requestTokens[1];
-            entry.ProtocolVersion = requestTokens[2];
+            //var requestTokens = tokens[7].TrimStart('"').TrimEnd('"').Split(' ');
+            entry.Method = tokens[8].Trim('"');
+            entry.Uri = tokens[9];
+            entry.ProtocolVersion = tokens[10];
 
             entry.HttpStatusCode = int.Parse(tokens[8]);
             entry.ContentLength = long.Parse(tokens[9]);
