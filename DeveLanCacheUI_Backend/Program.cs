@@ -1,5 +1,6 @@
 
 using DeveLanCacheUI_Backend.Db;
+using DeveLanCacheUI_Backend.LogReading;
 using Microsoft.EntityFrameworkCore;
 
 namespace DeveLanCacheUI_Backend
@@ -21,6 +22,7 @@ namespace DeveLanCacheUI_Backend
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+            builder.Services.AddHostedService<LanCacheLogReaderHostedService>();
 
             var app = builder.Build();
 

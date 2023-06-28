@@ -15,5 +15,7 @@
         public string CacheHitStatus { get; set; }
         public string ServerName { get; set; }
         public string Unknown { get; set; }
+
+        public int? SteamAppId { get; set; }
     }
 }

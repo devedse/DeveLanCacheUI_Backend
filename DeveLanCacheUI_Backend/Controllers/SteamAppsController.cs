@@ -1,5 +1,7 @@
 using DeveLanCacheUI_Backend.Db;
+using DeveLanCacheUI_Backend.Db.DbModels;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace DeveLanCacheUI_Backend.Controllers
 {
@@ -12,19 +14,13 @@ namespace DeveLanCacheUI_Backend.Controllers
 
         public SteamAppsController(DeveLanCacheUIDbContext dbContext, ILogger<SteamAppsController> logger)
         {
-            this._dbContext = dbContext;
+            _dbContext = dbContext;
             _logger = logger;
         }
 
-        public IEnumerable<WeatherForecast> Get()
+        public async Task<IEnumerable<DbSteamAppDownloadEvent>> Get()
         {
-            return Enumerable.Range(1, 5).Select(index => new WeatherForecast
-            {
-                Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                TemperatureC = Random.Shared.Next(-20, 55),
-                Summary = Summaries[Random.Shared.Next(Summaries.Length)]
-            })
-            .ToArray();
+            return await _dbContext.SteamAppDownloadEvents.OrderByDescending(t => t.LastUpdatedAt).ToListAsync();
         }
     }
 }

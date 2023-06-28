@@ -6,6 +6,6 @@ namespace DeveLanCacheUI_Backend.Db.DbModels
     {
         [Key]
         public int Id { get; set; }
-        public int AppName { get; set; }
+        public string AppName { get; set; }
     }
 }
