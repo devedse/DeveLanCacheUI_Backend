@@ -43,13 +43,15 @@ namespace DeveLanCacheUI_Backend.LogReading
 
             while (true)
             {
-                var logLineSet = TailFrom(accessLogFilePath, stoppingToken).Take(1000).TakeWhile(t => t != null).ToList();
+                var parsedLogLines = TailFrom(accessLogFilePath, stoppingToken)
+                    .Select(t => t == null ? null : LanCacheLogLineParser.ParseLogEntry(t))
+                    .Where(t => t == null || t.DateTime > oldestLog)
+                    .Take(1000).TakeWhile(t => t != null).ToList();
 
                 await using (var scope = Services.CreateAsyncScope())
                 {
                     using var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();
 
-                    var parsedLogLines = logLineSet.Select(LanCacheLogLineParser.ParseLogEntry);
                     var parsedLogLinesSteam = parsedLogLines.Where(t => t.Protocol == "steam");
 
                     Dictionary<int, DbSteamApp> steamAppsCache = new Dictionary<int, DbSteamApp>();
