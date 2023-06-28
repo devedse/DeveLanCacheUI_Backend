@@ -12,5 +12,14 @@ namespace DeveLanCacheUI_Backend.Db
         {
 
         }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<DbSteamApp>()
+                .Property(t => t.Id)
+                .ValueGeneratedNever();
+
+            base.OnModelCreating(modelBuilder);
+        }
     }
 }

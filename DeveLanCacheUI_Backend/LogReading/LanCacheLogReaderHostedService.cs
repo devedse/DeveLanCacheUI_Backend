@@ -62,6 +62,7 @@ namespace DeveLanCacheUI_Backend.LogReading
                         var foundInDb = await dbContext.SteamApps.FirstOrDefaultAsync(t => t.Id == steamAppId.Key);
                         if (foundInDb == null)
                         {
+                            Console.WriteLine($"Found new Steam AppId: {steamAppId.Key.Value}");
                             foundInDb = new DbSteamApp()
                             {
                                 Id = steamAppId.Key.Value,
@@ -90,6 +91,7 @@ namespace DeveLanCacheUI_Backend.LogReading
                                 {
                                     foundEventInCache = new DbSteamAppDownloadEvent()
                                     {
+                                        CreatedAt = firstUpdateEntryForThisAppId.DateTime,
                                         SteamAppId = steamAppId.Key.Value,
                                         ClientIp = groupOnIp.Key
                                     };
@@ -106,6 +108,7 @@ namespace DeveLanCacheUI_Backend.LogReading
                         var cacheKey = $"{steamLogLine.SteamAppId}_{steamLogLine.IpAddress}";
                         var cachedEvent = steamAppDownloadEventsCache[cacheKey];
 
+                        cachedEvent.LastUpdatedAt = steamLogLine.DateTime;
                         if (steamLogLine.CacheHitStatus == "HIT")
                         {
                             cachedEvent.CacheHitBytes += steamLogLine.ContentLength;
