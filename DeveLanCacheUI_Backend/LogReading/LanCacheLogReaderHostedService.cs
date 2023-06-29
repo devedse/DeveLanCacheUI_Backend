@@ -47,13 +47,16 @@ namespace DeveLanCacheUI_Backend.LogReading
             var parsedLogLines = allLogLines.Select(t => t == null ? null : LanCacheLogLineParser.ParseLogEntry(t));
             var batches = Batch2(parsedLogLines, 1000, oldestLog);
 
+            int totalLinesProcessed = 0;
+
             foreach(var currentSet in batches)
             {
                 //parsedLogLines = parsedLogLines
                 //    .Where(t => t == null || t.DateTime > oldestLog)
                 //    .Take(1000)
                 //    .TakeWhile(t => t != null);
-
+                Console.WriteLine($"Processing {currentSet.Count} lines... First DateTime: {currentSet.FirstOrDefault()?.DateTime} (Total processed: {totalLinesProcessed})");
+                totalLinesProcessed += currentSet.Count;
 
                 await using (var scope = Services.CreateAsyncScope())
                 {
@@ -100,9 +103,11 @@ namespace DeveLanCacheUI_Backend.LogReading
                             var cacheKey = $"{steamAppId.Key}_{groupOnIp.Key}";
                             if (foundEventInCache == null)
                             {
+                                Console.WriteLine($"Adding new event: {cacheKey} ({firstUpdateEntryForThisAppId.DateTime})");
                                 foundEventInCache = new DbSteamAppDownloadEvent()
                                 {
                                     CreatedAt = firstUpdateEntryForThisAppId.DateTime,
+                                    LastUpdatedAt = firstUpdateEntryForThisAppId.DateTime,
                                     SteamAppId = steamAppId.Key.Value,
                                     ClientIp = groupOnIp.Key
                                 };
@@ -115,10 +120,24 @@ namespace DeveLanCacheUI_Backend.LogReading
 
                     foreach (var steamLogLine in parsedLogLinesSteam)
                     {
-                        Console.WriteLine(steamLogLine.OriginalLogLine);
+                        //Console.WriteLine(steamLogLine.OriginalLogLine);
 
                         var cacheKey = $"{steamLogLine.SteamAppId}_{steamLogLine.IpAddress}";
                         var cachedEvent = steamAppDownloadEventsCache[cacheKey];
+
+                        if (!(cachedEvent.LastUpdatedAt > steamLogLine.DateTime.AddMinutes(-5)))
+                        {
+                            Console.WriteLine($"Adding new event because more then 5 minutes no update: {cacheKey} ({cachedEvent.LastUpdatedAt} => {steamLogLine.DateTime})");
+                            cachedEvent = new DbSteamAppDownloadEvent()
+                            {
+                                CreatedAt = steamLogLine.DateTime,
+                                LastUpdatedAt = steamLogLine.DateTime,
+                                SteamAppId = cachedEvent.SteamAppId,
+                                ClientIp = cachedEvent.ClientIp
+                            };
+                            steamAppDownloadEventsCache[cacheKey] = cachedEvent;
+                            await dbContext.SteamAppDownloadEvents.AddAsync(cachedEvent);
+                        }
 
                         cachedEvent.LastUpdatedAt = steamLogLine.DateTime;
                         if (steamLogLine.CacheHitStatus == "HIT")
@@ -136,8 +155,10 @@ namespace DeveLanCacheUI_Backend.LogReading
             }
         }
 
-        public IEnumerable<IEnumerable<LanCacheLogEntry>> Batch2(IEnumerable<LanCacheLogEntry?> collection, int batchSize, DateTime skipOlderThen)
+        public IEnumerable<List<LanCacheLogEntry>> Batch2(IEnumerable<LanCacheLogEntry?> collection, int batchSize, DateTime skipOlderThen)
         {
+            int skipCounter = 0;
+
             var nextbatch = new List<LanCacheLogEntry>();
             foreach (var logEntry in collection)
             {
@@ -146,6 +167,7 @@ namespace DeveLanCacheUI_Backend.LogReading
                     if (nextbatch.Any())
                     {
                         yield return nextbatch;
+                        nextbatch = new List<LanCacheLogEntry>();
                     }
                     else
                     {
@@ -163,6 +185,14 @@ namespace DeveLanCacheUI_Backend.LogReading
                         nextbatch = new List<LanCacheLogEntry>();
                     }
                 }
+                else
+                {
+                    skipCounter++;
+                    if (skipCounter % 1000 == 0)
+                    {
+                        Console.WriteLine($"Skipped total of {skipCounter} lines (already processed)");
+                    }
+                }
             }
         }
 
@@ -178,7 +208,11 @@ namespace DeveLanCacheUI_Backend.LogReading
 
                     string? line = reader.ReadLine();
                     if (reader.BaseStream.Length < reader.BaseStream.Position)
-                        reader.BaseStream.Seek(0, SeekOrigin.Begin);
+                    {
+                        Console.WriteLine($"Uhh: {reader.BaseStream.Length} < {reader.BaseStream.Position}");
+                        //reader.BaseStream.Seek(0, SeekOrigin.Begin);
+
+                    }
 
                     if (line != null)
                     {
