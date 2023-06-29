@@ -1,5 +1,7 @@
 ﻿using DeveLanCacheUI_Backend.Db;
 using DeveLanCacheUI_Backend.Db.DbModels;
+using DeveLanCacheUI_Backend.LogReading.Models;
+using DeveLanCacheUI_Backend.Steam;
 using Microsoft.EntityFrameworkCore;
 
 namespace DeveLanCacheUI_Backend.LogReading
@@ -41,18 +43,23 @@ namespace DeveLanCacheUI_Backend.LogReading
             var accessLogFilePath = Path.Combine(logFilePath, "access.log");
 
 
-            while (true)
+            var allLogLines = TailFrom(accessLogFilePath, stoppingToken);
+            var parsedLogLines = allLogLines.Select(t => t == null ? null : LanCacheLogLineParser.ParseLogEntry(t));
+            var batches = Batch2(parsedLogLines, 1000, oldestLog);
+
+            foreach(var currentSet in batches)
             {
-                var parsedLogLines = TailFrom(accessLogFilePath, stoppingToken)
-                    .Select(t => t == null ? null : LanCacheLogLineParser.ParseLogEntry(t))
-                    .Where(t => t == null || t.DateTime > oldestLog)
-                    .Take(1000).TakeWhile(t => t != null).ToList();
+                //parsedLogLines = parsedLogLines
+                //    .Where(t => t == null || t.DateTime > oldestLog)
+                //    .Take(1000)
+                //    .TakeWhile(t => t != null);
+
 
                 await using (var scope = Services.CreateAsyncScope())
                 {
                     using var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();
 
-                    var parsedLogLinesSteam = parsedLogLines.Where(t => t.Protocol == "steam");
+                    var parsedLogLinesSteam = currentSet.Where(t => t.Protocol == "steam");
 
                     Dictionary<int, DbSteamApp> steamAppsCache = new Dictionary<int, DbSteamApp>();
                     Dictionary<string, DbSteamAppDownloadEvent> steamAppDownloadEventsCache = new Dictionary<string, DbSteamAppDownloadEvent>();
@@ -65,48 +72,51 @@ namespace DeveLanCacheUI_Backend.LogReading
                         if (foundInDb == null)
                         {
                             Console.WriteLine($"Found new Steam AppId: {steamAppId.Key.Value}");
+                            var appId = steamAppId.Key.Value;
+                            var foundApp = SteamApi.SteamApiData.applist.apps.Where(t => t.appid == appId).FirstOrDefault();
                             foundInDb = new DbSteamApp()
                             {
-                                Id = steamAppId.Key.Value,
-                                AppName = "YeahDontKnowYet"
+                                Id = appId,
+                                AppName = foundApp?.name ?? "unknown"
                             };
                             await dbContext.SteamApps.AddAsync(foundInDb);
                         }
-                        else
+
+
+                        var groupedOnClientIps = steamAppId.GroupBy(t => t.IpAddress);
+
+                        foreach (var groupOnIp in groupedOnClientIps)
                         {
-                            var groupedOnClientIps = steamAppId.GroupBy(t => t.IpAddress);
+                            var firstUpdateEntryForThisAppId = steamAppId.OrderBy(t => t.DateTime).First();
 
-                            foreach (var groupOnIp in groupedOnClientIps)
+                            //See if anything happened here in the last 5 minutes
+                            var foundEventInCache = await dbContext.SteamAppDownloadEvents
+                                .FirstOrDefaultAsync(t =>
+                                    t.SteamAppId == steamAppId.Key &&
+                                    t.ClientIp == groupOnIp.Key &&
+                                    t.LastUpdatedAt > firstUpdateEntryForThisAppId.DateTime.AddMinutes(-5)
+                                    );
+
+                            var cacheKey = $"{steamAppId.Key}_{groupOnIp.Key}";
+                            if (foundEventInCache == null)
                             {
-                                var firstUpdateEntryForThisAppId = steamAppId.OrderBy(t => t.DateTime).First();
-
-                                //See if anything happened here in the last 5 minutes
-                                var foundEventInCache = await dbContext.SteamAppDownloadEvents
-                                    .FirstOrDefaultAsync(t =>
-                                        t.SteamAppId == steamAppId.Key &&
-                                        t.ClientIp == groupOnIp.Key &&
-                                        t.LastUpdatedAt < firstUpdateEntryForThisAppId.DateTime.AddMinutes(-5)
-                                        );
-
-                                var cacheKey = $"{steamAppId.Key}_{groupOnIp.Key}";
-                                if (foundEventInCache == null)
+                                foundEventInCache = new DbSteamAppDownloadEvent()
                                 {
-                                    foundEventInCache = new DbSteamAppDownloadEvent()
-                                    {
-                                        CreatedAt = firstUpdateEntryForThisAppId.DateTime,
-                                        SteamAppId = steamAppId.Key.Value,
-                                        ClientIp = groupOnIp.Key
-                                    };
-                                    await dbContext.SteamAppDownloadEvents.AddAsync(foundEventInCache);
-                                }
-                                steamAppDownloadEventsCache.Add(cacheKey, foundEventInCache);
+                                    CreatedAt = firstUpdateEntryForThisAppId.DateTime,
+                                    SteamAppId = steamAppId.Key.Value,
+                                    ClientIp = groupOnIp.Key
+                                };
+                                await dbContext.SteamAppDownloadEvents.AddAsync(foundEventInCache);
                             }
+                            steamAppDownloadEventsCache.Add(cacheKey, foundEventInCache);
                         }
                         steamAppsCache.Add(steamAppId.Key.Value, foundInDb);
                     }
 
                     foreach (var steamLogLine in parsedLogLinesSteam)
                     {
+                        Console.WriteLine(steamLogLine.OriginalLogLine);
+
                         var cacheKey = $"{steamLogLine.SteamAppId}_{steamLogLine.IpAddress}";
                         var cachedEvent = steamAppDownloadEventsCache[cacheKey];
 
@@ -122,6 +132,36 @@ namespace DeveLanCacheUI_Backend.LogReading
                     }
 
                     await dbContext.SaveChangesAsync();
+                }
+            }
+        }
+
+        public IEnumerable<IEnumerable<LanCacheLogEntry>> Batch2(IEnumerable<LanCacheLogEntry?> collection, int batchSize, DateTime skipOlderThen)
+        {
+            var nextbatch = new List<LanCacheLogEntry>();
+            foreach (var logEntry in collection)
+            {
+                if (logEntry == null)
+                {
+                    if (nextbatch.Any())
+                    {
+                        yield return nextbatch;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"{DateTime.Now} No new log lines, waiting...");
+                        Thread.Sleep(1000);
+                        continue;
+                    }
+                }
+                else if (logEntry.DateTime > skipOlderThen)
+                {
+                    nextbatch.Add(logEntry);
+                    if (nextbatch.Count == batchSize)
+                    {
+                        yield return nextbatch;
+                        nextbatch = new List<LanCacheLogEntry>();
+                    }
                 }
             }
         }

@@ -2,6 +2,9 @@
 {
     public class LanCacheLogEntry
     {
+        public string OriginalLogLine { get; set; }
+        public string? ParseException { get; set; }
+
         public string Protocol { get; set; }
         public string IpAddress { get; set; }
         public DateTime DateTime { get; set; }
@@ -17,5 +20,10 @@
         public string Unknown { get; set; }
 
         public int? SteamAppId { get; set; }
+
+        public override string ToString()
+        {
+            return $"{DateTime} => {Protocol}: {SteamAppId}";
+        }
     }
 }
