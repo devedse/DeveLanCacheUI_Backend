@@ -46,7 +46,7 @@ namespace DeveLanCacheUI_Backend.LogReading
                     var uriParts = entry.Uri.Split('/');
                     if (uriParts.Length > 2 && uriParts[1] == "depot")
                     {
-                        entry.SteamAppId = int.Parse(uriParts[2]);
+                        entry.SteamDepotId = int.Parse(uriParts[2]);
                     }
                     else
                     {
