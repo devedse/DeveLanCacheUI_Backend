@@ -2,6 +2,7 @@
 using DeveLanCacheUI_Backend.Db;
 using DeveLanCacheUI_Backend.LogReading;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 
 namespace DeveLanCacheUI_Backend
 {
@@ -18,11 +19,12 @@ namespace DeveLanCacheUI_Backend
                 options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"));
             });
 
-            builder.Services.AddControllers();
+            builder.Services.AddControllers().AddJsonOptions(x =>
+                 x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
-            builder.Services.AddHostedService<LanCacheLogReaderHostedService>();
+            //builder.Services.AddHostedService<LanCacheLogReaderHostedService>();
 
             var app = builder.Build();
 
