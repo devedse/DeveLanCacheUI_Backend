@@ -24,6 +24,15 @@ namespace DeveLanCacheUI_Backend.LogReading
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
+
+            await SimpleSteamDataSeeder.GoSeed(Services);
+
+            await GoRun(stoppingToken);
+        }
+
+        private async Task GoRun(CancellationToken stoppingToken)
+        {
             var oldestLog = DateTime.MinValue;
             await using (var scope = Services.CreateAsyncScope())
             {
@@ -49,7 +58,7 @@ namespace DeveLanCacheUI_Backend.LogReading
 
             int totalLinesProcessed = 0;
 
-            foreach(var currentSet in batches)
+            foreach (var currentSet in batches)
             {
                 //parsedLogLines = parsedLogLines
                 //    .Where(t => t == null || t.DateTime > oldestLog)

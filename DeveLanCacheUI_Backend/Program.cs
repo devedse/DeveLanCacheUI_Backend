@@ -24,7 +24,19 @@ namespace DeveLanCacheUI_Backend
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
-            //builder.Services.AddHostedService<LanCacheLogReaderHostedService>();
+            builder.Services.AddHostedService<LanCacheLogReaderHostedService>();
+
+            // Configure CORS policy
+            builder.Services.AddCors(options =>
+            {
+                options.AddDefaultPolicy(
+                    builder =>
+                    {
+                        builder.AllowAnyOrigin()
+                               .AllowAnyMethod()
+                               .AllowAnyHeader();
+                    });
+            });
 
             var app = builder.Build();
 
@@ -46,8 +58,10 @@ namespace DeveLanCacheUI_Backend
 
             app.UseHttpsRedirection();
 
-            app.UseAuthorization();
+            // Use the CORS policy
+            app.UseCors();
 
+            app.UseAuthorization();
 
             app.MapControllers();
 
