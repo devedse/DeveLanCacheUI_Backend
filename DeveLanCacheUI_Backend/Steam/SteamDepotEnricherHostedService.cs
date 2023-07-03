@@ -66,6 +66,10 @@ namespace DeveLanCacheUI_Backend.LogReading
                             curFileSize = newFileSize;
                             fileSizeTimer.Restart();
                         }
+                        else
+                        {
+                            _logger.LogInformation($"File size equal for {fileSizeTimer.Elapsed}");
+                        }
                         await Task.Delay(1000);
                     }
 
