@@ -1,6 +1,41 @@
 # DeveLanCacheUI_Backend
 A UI for Lan Cache
 
+## How to run this
+
+```
+version: '3'
+
+services:
+  develancacheui_backend:
+    image: devedse/develancacheui_backend:latest
+    restart: unless-stopped
+    ports:
+      - '7301:80'
+    environment:
+      - LanCacheLogsDirectory=/var/develancacheui/lancachelogs
+      - DepotFileDirectory=/var/develancacheui/depotdir
+      - ConnectionStrings__DefaultConnection=Data Source=/var/develancacheui/database/develancacheui.db;
+    volumes:
+      - "/home/pi/dockercomposers/develancacheui/backend/depotdir:/var/develancacheui/depotdir"
+      - "/home/pi/dockercomposers/develancacheui/backend/database:/var/develancacheui/database"
+      - "/mnt/devenologynas/DockerComposers/lancache/logs:/var/develancacheui/lancachelogs"
+  develancacheui_frontend:
+    image: devedse/develancacheui_frontend:latest
+    restart: unless-stopped
+    ports:
+      - '7302:80'
+    environment:
+      - BACKENDURL=https://develancacheui_api.devedse.duckdns.org
+```
+
+Steps:
+1. Create/mount the relevant directories
+2. Run the docker-compose file
+3. Copy paste the app-depot-output.csv file in the mounted `depotdir`. This will automatically fill the database with all Depot => App mappings
+4. Profit
+
+
 ## Build status
 
 | GitHubActions Builds |
