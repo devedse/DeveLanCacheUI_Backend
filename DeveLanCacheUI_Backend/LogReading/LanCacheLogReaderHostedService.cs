@@ -140,8 +140,6 @@ namespace DeveLanCacheUI_Backend.LogReading
 
                         foreach (var steamLogLine in parsedLogLinesSteam)
                         {
-                            //Console.WriteLine(steamLogLine.OriginalLogLine);
-
                             var cacheKey = $"{steamLogLine.SteamDepotId}_{steamLogLine.IpAddress}";
                             var cachedEvent = steamAppDownloadEventsCache[cacheKey];
 
