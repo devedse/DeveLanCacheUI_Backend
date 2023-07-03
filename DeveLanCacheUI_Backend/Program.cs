@@ -2,6 +2,7 @@
 using DeveLanCacheUI_Backend.Db;
 using DeveLanCacheUI_Backend.LogReading;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 
 namespace DeveLanCacheUI_Backend
 {
@@ -18,12 +19,25 @@ namespace DeveLanCacheUI_Backend
                 options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"));
             });
 
-            builder.Services.AddControllers();
+            builder.Services.AddControllers().AddJsonOptions(x =>
+                 x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
             builder.Services.AddHostedService<LanCacheLogReaderHostedService>();
             builder.Services.AddHostedService<SteamDepotEnricherHostedService>();
+
+            // Configure CORS policy
+            builder.Services.AddCors(options =>
+            {
+                options.AddDefaultPolicy(
+                    builder =>
+                    {
+                        builder.AllowAnyOrigin()
+                               .AllowAnyMethod()
+                               .AllowAnyHeader();
+                    });
+            });
 
             var app = builder.Build();
 
@@ -45,8 +59,10 @@ namespace DeveLanCacheUI_Backend
 
             app.UseHttpsRedirection();
 
-            app.UseAuthorization();
+            // Use the CORS policy
+            app.UseCors();
 
+            app.UseAuthorization();
 
             app.MapControllers();
 

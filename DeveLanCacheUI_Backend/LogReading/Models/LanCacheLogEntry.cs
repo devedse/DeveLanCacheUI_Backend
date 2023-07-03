@@ -19,11 +19,11 @@
         public string ServerName { get; set; }
         public string Unknown { get; set; }
 
-        public int? SteamAppId { get; set; }
+        public int? SteamDepotId { get; set; }
 
         public override string ToString()
         {
-            return $"{DateTime} => {Protocol}: {SteamAppId}";
+            return $"{DateTime} => {Protocol}: {SteamDepotId}";
         }
     }
 }
