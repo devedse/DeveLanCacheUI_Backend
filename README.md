@@ -21,7 +21,7 @@ services:
     volumes:
       - "/home/pi/dockercomposers/develancacheui/backend/depotdir:/var/develancacheui/depotdir"
       - "/home/pi/dockercomposers/develancacheui/backend/database:/var/develancacheui/database"
-      - "/mnt/devenologynas/DockerComposers/lancache/logs:/var/develancacheui/lancachelogs"
+      - "/mnt/devenologynas/DockerComposers/lancache/logs:/var/develancacheui/lancachelogs:ro"
   develancacheui_frontend:
     image: devedse/develancacheui_frontend:latest
     restart: unless-stopped
