@@ -6,7 +6,6 @@ namespace DeveLanCacheUI_Backend.Db
 {
     public class DeveLanCacheUIDbContext : DbContext
     {
-        public DbSet<DbSteamApp> SteamApps => Set<DbSteamApp>();
         public DbSet<DbSteamDepot> SteamDepots => Set<DbSteamDepot>();
         public DbSet<DbSteamAppDownloadEvent> SteamAppDownloadEvents => Set<DbSteamAppDownloadEvent>();
 
@@ -17,24 +16,13 @@ namespace DeveLanCacheUI_Backend.Db
 
         public async Task SeedDataAsync(int appId, params int[] depotIds)
         {
-            var existingApp = await SteamApps.FirstOrDefaultAsync(a => a.Id == appId);
+            var appName = SteamApi.SteamApiData?.applist?.apps?.FirstOrDefault(t => t.appid == appId)?.name ?? "NameNotFound";
 
-            if (existingApp == null)
-            {
-                var newApp = new DbSteamApp
-                {
-                    Id = appId,
-                    AppName = SteamApi.SteamApiData?.applist?.apps?.FirstOrDefault(t => t.appid == appId)?.name ?? "NameNotFound",
-                };
-
-                Console.WriteLine($"Seeding {newApp.AppName} ({appId}), depots: {string.Join(", ", depotIds)})");
-
-                await SteamApps.AddAsync(newApp);
-                await SaveChangesAsync();
-            }
 
             foreach (var depotId in depotIds)
             {
+                Console.WriteLine($"Seeding {appName} ({appId}), depots: {depotId})");
+
                 var existingDepot = await SteamDepots.FirstOrDefaultAsync(d => d.Id == depotId);
                 if (existingDepot != null)
                 {
@@ -59,10 +47,6 @@ namespace DeveLanCacheUI_Backend.Db
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<DbSteamApp>()
-                .Property(t => t.Id)
-                .ValueGeneratedNever();
-
             base.OnModelCreating(modelBuilder);
         }
     }

@@ -1,5 +1,6 @@
 using DeveLanCacheUI_Backend.Db;
 using DeveLanCacheUI_Backend.Db.DbModels;
+using DeveLanCacheUI_Backend.Steam;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,7 +22,12 @@ namespace DeveLanCacheUI_Backend.Controllers
         [HttpGet]
         public async Task<IEnumerable<DbSteamAppDownloadEvent>> Get(int skip, int count)
         {
-            return await _dbContext.SteamAppDownloadEvents.Include(t => t.SteamDepot).ThenInclude(t => t.SteamApp).OrderByDescending(t => t.LastUpdatedAt).Skip(skip).Take(count).ToListAsync();
+            var allDownloadEvents =  await _dbContext.SteamAppDownloadEvents.Include(t => t.SteamDepot).OrderByDescending(t => t.LastUpdatedAt).Skip(skip).Take(count).ToListAsync();
+            foreach(var downloadEvent in allDownloadEvents)
+            {
+                downloadEvent.SteamDepot.SteamApp = SteamApi.SteamApiData?.applist?.apps?.FirstOrDefault(t => t?.appid == downloadEvent.SteamDepot.SteamAppId);
+            }
+            return allDownloadEvents;
         }
     }
 }

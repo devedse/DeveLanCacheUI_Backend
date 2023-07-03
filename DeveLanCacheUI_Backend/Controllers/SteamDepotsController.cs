@@ -17,11 +17,5 @@ namespace DeveLanCacheUI_Backend.Controllers
             _dbContext = dbContext;
             _logger = logger;
         }
-
-        [HttpGet(Name = "GetUnknownDepotIds")]
-        public async Task<IEnumerable<int>> Get()
-        {
-            return await _dbContext.SteamDepots.Where(t => t.SteamApp == null).Select(t => t.Id).ToListAsync();
-        }
     }
 }
