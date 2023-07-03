@@ -4,6 +4,7 @@ using DeveLanCacheUI_Backend.LogReading.Models;
 using DeveLanCacheUI_Backend.Steam;
 using Microsoft.EntityFrameworkCore;
 using Polly;
+using System.Diagnostics;
 
 namespace DeveLanCacheUI_Backend.LogReading
 {
@@ -48,6 +49,25 @@ namespace DeveLanCacheUI_Backend.LogReading
                 if (firstFile != null)
                 {
                     Console.WriteLine($"Found .CSV file to update our Depots Database: {firstFile}");
+
+
+
+                    var curFileSize = new FileInfo(firstFile).Length;
+                    Console.WriteLine($"Waiting for file size to not increase anymore (as in, the copy is done). Current Size: {curFileSize}");
+
+                    var fileSizeTimer = Stopwatch.StartNew();
+
+                    while (fileSizeTimer.Elapsed.TotalSeconds < 5)
+                    {
+                        var newFileSize = new FileInfo(firstFile).Length;
+                        if (curFileSize != newFileSize)
+                        {
+                            _logger.LogInformation($"File size has increased, waiting 5 more seconds... from: {curFileSize} to {newFileSize}");
+                            curFileSize = newFileSize;
+                            fileSizeTimer.Restart();
+                        }
+                        await Task.Delay(1000);
+                    }
 
                     var depotToAppDict = new Dictionary<int, int>();
 
