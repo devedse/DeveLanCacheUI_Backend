@@ -5,7 +5,7 @@ WORKDIR /app
 EXPOSE 80
 EXPOSE 443
 
-FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:7.0-bullseye-slim-amd64 AS build
 WORKDIR /src
 COPY ["DeveLanCacheUI_Backend/DeveLanCacheUI_Backend.csproj", "DeveLanCacheUI_Backend/"]
 RUN dotnet restore "DeveLanCacheUI_Backend/DeveLanCacheUI_Backend.csproj"
