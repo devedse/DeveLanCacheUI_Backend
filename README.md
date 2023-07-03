@@ -1,5 +1,7 @@
 # DeveLanCacheUI_Backend
-A UI for Lan Cache
+A UI for Lan Cache. Currently only supports Steam, but works quite nicely t.b.h.
+
+![ScreenshotFrontend](Screenshot_Frontend.png)
 
 ## How to run this
 
@@ -33,8 +35,18 @@ Steps:
 1. Create/mount the relevant directories
 2. Run the docker-compose file
 3. Copy paste the app-depot-output.csv file in the mounted `depotdir`. This will automatically fill the database with all Depot => App mappings
-4. Profit
+4. Github Sponsor me 5k euro's kthnx
+5. Profit
 
+## Progress / Plans
+
+| Task | Progress |
+|:----:|:--------:|
+| Automated Deployments | 90% |
+| Dockerization | 90% |
+| Implement other protocols besides steam | 0% |
+| Auto refresh | 0% |
+| More data things | 0% |
 
 ## Build status
 
