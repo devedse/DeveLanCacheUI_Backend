@@ -4,6 +4,7 @@ using DeveLanCacheUI_Backend.LogReading.Models;
 using DeveLanCacheUI_Backend.Steam;
 using Microsoft.EntityFrameworkCore;
 using Polly;
+using System.Text;
 
 namespace DeveLanCacheUI_Backend.LogReading
 {
@@ -53,7 +54,7 @@ namespace DeveLanCacheUI_Backend.LogReading
             var accessLogFilePath = Path.Combine(logFilePath, "access.log");
 
 
-            var allLogLines = TailFrom(accessLogFilePath, stoppingToken);
+            var allLogLines = TailFrom2(accessLogFilePath, stoppingToken);
             var parsedLogLines = allLogLines.Select(t => t == null ? null : LanCacheLogLineParser.ParseLogEntry(t));
             var batches = Batch2(parsedLogLines, 1000, oldestLog);
 
@@ -244,5 +245,52 @@ namespace DeveLanCacheUI_Backend.LogReading
                 }
             }
         }
+
+        static IEnumerable<string> TailFrom2(string file, CancellationToken stoppingToken)
+        {
+            using (var fileStream = File.OpenRead(file))
+            {
+                const int BufferSize = 1024;
+                var buffer = new byte[BufferSize];
+                var leftoverBuffer = new List<byte>();
+                int bytesRead;
+
+                while (true)
+                {
+                    stoppingToken.ThrowIfCancellationRequested();
+
+                    bytesRead = fileStream.Read(buffer, 0, BufferSize);
+
+                    if (bytesRead == 0)
+                    {
+                        yield return null;
+                        continue;
+                    }
+
+                    int newlineIndex;
+                    var searchStartIndex = 0;
+
+                    while ((newlineIndex = Array.IndexOf(buffer, (byte)'\n', searchStartIndex, bytesRead - searchStartIndex)) != -1)
+                    {
+                        // Include \r in the line if present
+                        var lineEndIndex = newlineIndex > 0 && buffer[newlineIndex - 1] == '\r' ? newlineIndex - 1 : newlineIndex;
+
+                        var lineBuffer = new byte[leftoverBuffer.Count + lineEndIndex - searchStartIndex];
+                        leftoverBuffer.CopyTo(lineBuffer);
+                        Array.Copy(buffer, searchStartIndex, lineBuffer, leftoverBuffer.Count, lineEndIndex - searchStartIndex);
+
+                        yield return Encoding.UTF8.GetString(lineBuffer);
+
+                        leftoverBuffer.Clear();
+                        searchStartIndex = newlineIndex + 1;
+                    }
+
+                    // Save leftover data for next loop
+                    leftoverBuffer.AddRange(buffer.Skip(searchStartIndex).Take(bytesRead - searchStartIndex));
+                }
+            }
+        }
+
+
     }
 }
