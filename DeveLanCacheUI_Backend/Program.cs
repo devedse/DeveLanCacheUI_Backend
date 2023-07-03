@@ -23,6 +23,7 @@ namespace DeveLanCacheUI_Backend
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
             builder.Services.AddHostedService<LanCacheLogReaderHostedService>();
+            builder.Services.AddHostedService<SteamDepotEnricherHostedService>();
 
             var app = builder.Build();
 
