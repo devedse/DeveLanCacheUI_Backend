@@ -25,18 +25,18 @@ namespace DeveLanCacheUI_Backend.LogReading
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            var logFilePath = _configuration.GetValue<string>("DepotFileCsvPath")!;
+            var depotFileDirectory = _configuration.GetValue<string>("DepotFileDirectory")!;
 
-            if (string.IsNullOrWhiteSpace(logFilePath))
+            if (string.IsNullOrWhiteSpace(depotFileDirectory))
             {
-                logFilePath = Directory.GetCurrentDirectory();
+                depotFileDirectory = Directory.GetCurrentDirectory();
             }
 
-            Console.WriteLine($"Watching directory: '{logFilePath}' for any .CSV files to update our Depot database...");
+            _logger.LogInformation($"Watching directory: '{depotFileDirectory}' for any .CSV files to update our Depot database...");
 
             while (true)
             {
-                var firstFile = Directory.GetFiles(logFilePath).Where(t => Path.GetExtension(t).Equals(".csv", StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                var firstFile = Directory.GetFiles(depotFileDirectory).Where(t => Path.GetExtension(t).Equals(".csv", StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
 
                 if (firstFile != null)
                 {
@@ -54,7 +54,7 @@ namespace DeveLanCacheUI_Backend.LogReading
 
                             if (values.Length < 3)
                             {
-                                Console.WriteLine("Warning: Line does not contain sufficient data, skipping");
+                                //Console.WriteLine("Warning: Line does not contain sufficient data, skipping");
                                 continue;
                             }
 
@@ -63,43 +63,50 @@ namespace DeveLanCacheUI_Backend.LogReading
 
                             if (!appIdParsed || !depotIdParsed)
                             {
-                                Console.WriteLine("Warning: AppId or DepotId could not be parsed, skipping");
+                                //Console.WriteLine("Warning: AppId or DepotId could not be parsed, skipping");
                                 continue;
                             }
 
                             if (!depotToAppDict.ContainsKey(depotId))
+                            {
                                 depotToAppDict.Add(depotId, appId);
+                            }
                             else
-                                Console.WriteLine("Warning: Duplicate depotId found, skipping");
+                            {
+                                //Console.WriteLine("Warning: Duplicate depotId found, skipping");
+                            }
                         }
                     }
 
                     Console.WriteLine($"Depot File {firstFile} read. Adding {depotToAppDict.Count} entries to db...");
 
-                    await using (var scope = Services.CreateAsyncScope())
-                    {
-                      
 
 
-                        var retryPolicy = Policy
-                            .Handle<DbUpdateException>()
-                            .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
-                            (exception, timeSpan, context) =>
-                            {
-                                Console.WriteLine($"An error occurred while trying to save changes: {exception.Message}");
-                            });
 
-                        var depotList = depotToAppDict.Keys.ToList();
 
-                        //Batch operations in groups of 1000
-                        for (int i = 0; i < depotList.Count; i += 1000)
+                    var retryPolicy = Policy
+                        .Handle<DbUpdateException>()
+                        .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                        (exception, timeSpan, context) =>
                         {
-                            await retryPolicy.ExecuteAsync(async () =>
+                            _logger.LogWarning($"An error occurred while trying to save changes: {exception.Message}");
+                        });
+
+                    var depotList = depotToAppDict.Keys.ToList();
+
+                    //Batch operations in groups of 1000
+                    for (int i = 0; i < depotList.Count; i += 1000)
+                    {
+                        await retryPolicy.ExecuteAsync(async () =>
+                        {
+                            await using (var scope = Services.CreateAsyncScope())
                             {
                                 using var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();
 
 
                                 var currentBatch = depotList.Skip(i).Take(1000).ToList();
+
+                                int newDepots = 0;
 
                                 foreach (var depotId in currentBatch)
                                 {
@@ -112,27 +119,30 @@ namespace DeveLanCacheUI_Backend.LogReading
                                         //Depot does not exist, create it
                                         depot = new DbSteamDepot { Id = depotId };
                                         dbContext.SteamDepots.Add(depot);
+                                        newDepots++;
                                     }
 
                                     //Link the depot to the existing app
                                     depot.SteamAppId = depotToAppDict[depotId];
 
-                                    //Save changes
-                                    await dbContext.SaveChangesAsync();
 
                                 }
-                                Console.WriteLine($"Updated {currentBatch.Count} depots");
-                            });
-                        }
+                                //Save changes
+                                await dbContext.SaveChangesAsync();
 
-
+                                _logger.LogInformation($"Depots Processed: {i}/{depotList.Count}. Updated {currentBatch.Count - newDepots}, New {newDepots}");
+                            }
+                        });
                     }
 
 
 
-                    var processedDirectoryPath = Path.Combine(logFilePath, "processed");
+
+
+
+                    var processedDirectoryPath = Path.Combine(depotFileDirectory, "processed");
                     Directory.CreateDirectory(processedDirectoryPath);
-                    var newFileName = Path.GetFileNameWithoutExtension(logFilePath) + DateTime.Now.ToString("yyyy-dd-M--HH-mm-ss") + Path.GetExtension(firstFile);
+                    var newFileName = Path.GetFileNameWithoutExtension(depotFileDirectory) + DateTime.Now.ToString("yyyy-dd-M--HH-mm-ss") + Path.GetExtension(firstFile);
                     var newFilePath = Path.Combine(processedDirectoryPath, newFileName);
                     File.Move(firstFile, newFilePath);
                     Console.WriteLine($"File {firstFile} moved to {newFilePath}");
