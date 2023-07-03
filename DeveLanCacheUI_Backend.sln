@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.6.33723.286
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeveLanCacheUI_Backend", "DeveLanCacheUI_Backend\DeveLanCacheUI_Backend.csproj", "{8BE25B08-5047-4E03-AB78-7390BBF7BA16}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DeveLanCacheUI_Backend", "DeveLanCacheUI_Backend\DeveLanCacheUI_Backend.csproj", "{8BE25B08-5047-4E03-AB78-7390BBF7BA16}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeveLanCacheUI_Backend.Tests", "DeveLanCacheUI_Backend.Tests\DeveLanCacheUI_Backend.Tests.csproj", "{61B234FC-1790-4951-B763-9D93CA535DF8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{8BE25B08-5047-4E03-AB78-7390BBF7BA16}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8BE25B08-5047-4E03-AB78-7390BBF7BA16}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8BE25B08-5047-4E03-AB78-7390BBF7BA16}.Release|Any CPU.Build.0 = Release|Any CPU
+		{61B234FC-1790-4951-B763-9D93CA535DF8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{61B234FC-1790-4951-B763-9D93CA535DF8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{61B234FC-1790-4951-B763-9D93CA535DF8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{61B234FC-1790-4951-B763-9D93CA535DF8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
