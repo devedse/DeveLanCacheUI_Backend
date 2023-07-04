@@ -1,6 +1,7 @@
 
 using DeveLanCacheUI_Backend.Db;
 using DeveLanCacheUI_Backend.LogReading;
+using DeveLanCacheUI_Backend.Steam;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 

@@ -1,12 +1,11 @@
 ﻿using DeveLanCacheUI_Backend.Db;
 using DeveLanCacheUI_Backend.Db.DbModels;
 using DeveLanCacheUI_Backend.LogReading.Models;
-using DeveLanCacheUI_Backend.Steam;
 using Microsoft.EntityFrameworkCore;
 using Polly;
 using System.Diagnostics;
 
-namespace DeveLanCacheUI_Backend.LogReading
+namespace DeveLanCacheUI_Backend.Steam
 {
     public class SteamDepotEnricherHostedService : BackgroundService
     {
@@ -180,7 +179,7 @@ namespace DeveLanCacheUI_Backend.LogReading
                         File.Move(firstFile, newFilePath);
                         Console.WriteLine($"File {firstFile} moved to {newFilePath}");
                     }
-                    catch (System.IO.IOException ex)
+                    catch (IOException ex)
                     {
                         _logger.LogWarning($"IO Exception while reading/writing file. This could be because file is in use. Retrying...");
                     }

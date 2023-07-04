@@ -248,7 +248,7 @@ namespace DeveLanCacheUI_Backend.LogReading
 
         static IEnumerable<string> TailFrom2(string file, CancellationToken stoppingToken)
         {
-            using (var fileStream = File.OpenRead(file))
+            using (var fileStream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
                 const int BufferSize = 1024;
                 var buffer = new byte[BufferSize];
