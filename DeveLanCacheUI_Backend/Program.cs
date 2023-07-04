@@ -1,7 +1,9 @@
 
 using DeveLanCacheUI_Backend.Db;
+using DeveLanCacheUI_Backend.Hubs;
 using DeveLanCacheUI_Backend.LogReading;
 using DeveLanCacheUI_Backend.Steam;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 
@@ -25,8 +27,15 @@ namespace DeveLanCacheUI_Backend
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
-            builder.Services.AddHostedService<LanCacheLogReaderHostedService>();
-            builder.Services.AddHostedService<SteamDepotEnricherHostedService>();
+            //builder.Services.AddHostedService<LanCacheLogReaderHostedService>();
+            //builder.Services.AddHostedService<SteamDepotEnricherHostedService>();
+
+            builder.Services.AddSignalR();
+            builder.Services.AddResponseCompression(opts =>
+            {
+                opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
+                   new[] { "application/octet-stream" });
+            });
 
             // Configure CORS policy
             builder.Services.AddCors(options =>
@@ -41,6 +50,8 @@ namespace DeveLanCacheUI_Backend
             });
 
             var app = builder.Build();
+
+            app.UseResponseCompression();
 
             using (var scope = app.Services.CreateScope())
             {
@@ -66,6 +77,8 @@ namespace DeveLanCacheUI_Backend
             app.UseAuthorization();
 
             app.MapControllers();
+
+            app.MapHub<LanCacheHub>("/lancachehub");
 
             app.Run();
         }
