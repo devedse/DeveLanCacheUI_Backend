@@ -248,18 +248,25 @@ namespace DeveLanCacheUI_Backend.LogReading
 
         static IEnumerable<string> TailFrom2(string file, CancellationToken stoppingToken)
         {
-            using (var fileStream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            {
-                const int BufferSize = 1024;
-                var buffer = new byte[BufferSize];
-                var leftoverBuffer = new List<byte>();
-                int bytesRead;
+            int totalBytesRead = 0;
 
-                while (true)
+            const int BufferSize = 1024;
+            var buffer = new byte[BufferSize];
+            var leftoverBuffer = new List<byte>();
+            int bytesRead;
+
+            while (true)
+            {
+                using (var fileStream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
+                    fileStream.Seek(totalBytesRead, SeekOrigin.Begin);
+
+
                     stoppingToken.ThrowIfCancellationRequested();
 
                     bytesRead = fileStream.Read(buffer, 0, BufferSize);
+
+                    totalBytesRead += bytesRead;
 
                     if (bytesRead == 0)
                     {
