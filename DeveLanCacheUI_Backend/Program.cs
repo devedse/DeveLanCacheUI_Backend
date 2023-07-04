@@ -27,8 +27,8 @@ namespace DeveLanCacheUI_Backend
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
-            //builder.Services.AddHostedService<LanCacheLogReaderHostedService>();
-            //builder.Services.AddHostedService<SteamDepotEnricherHostedService>();
+            builder.Services.AddHostedService<LanCacheLogReaderHostedService>();
+            builder.Services.AddHostedService<SteamDepotEnricherHostedService>();
 
             builder.Services.AddSignalR();
             builder.Services.AddResponseCompression(opts =>
