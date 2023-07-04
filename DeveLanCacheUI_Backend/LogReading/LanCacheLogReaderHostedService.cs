@@ -191,7 +191,8 @@ namespace DeveLanCacheUI_Backend.LogReading
                     }
                     else
                     {
-                        Console.WriteLine($"{DateTime.Now} No new log lines, waiting...");
+                        var logFilePath = _configuration.GetValue<string>("LanCacheLogsDirectory")!;
+                        Console.WriteLine($"{DateTime.Now} No new log lines, waiting... Pos: {fstempmoetweg.Position} FsLength: {fstempmoetweg.Length} Length: {new FileInfo(Path.Combine(logFilePath, "access.log")).Length} CanRead: {fstempmoetweg.CanRead} BytesRead: {totalBytesRead}");
                         Thread.Sleep(1000);
                         continue;
                     }
@@ -246,20 +247,26 @@ namespace DeveLanCacheUI_Backend.LogReading
             }
         }
 
+        private static FileStream fstempmoetweg = null;
+        private static int totalBytesRead = 0;
+
         static IEnumerable<string> TailFrom2(string file, CancellationToken stoppingToken)
         {
-            int totalBytesRead = 0;
-
-            const int BufferSize = 1024;
-            var buffer = new byte[BufferSize];
-            var leftoverBuffer = new List<byte>();
-            int bytesRead;
-
-            while (true)
+            
+            using (var fileStream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
-                using (var fileStream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                fstempmoetweg = fileStream;
+
+                fileStream.Seek(totalBytesRead, SeekOrigin.Begin);
+
+                const int BufferSize = 1024;
+                var buffer = new byte[BufferSize];
+                var leftoverBuffer = new List<byte>();
+                int bytesRead;
+
+                while (true)
                 {
-                    fileStream.Seek(totalBytesRead, SeekOrigin.Begin);
+
 
 
                     stoppingToken.ThrowIfCancellationRequested();
@@ -267,6 +274,11 @@ namespace DeveLanCacheUI_Backend.LogReading
                     bytesRead = fileStream.Read(buffer, 0, BufferSize);
 
                     totalBytesRead += bytesRead;
+
+                    if (fileStream.Position != totalBytesRead)
+                    {
+                        Console.WriteLine($"Pos: {fileStream.Position} BytesRead: {totalBytesRead} Length: {fileStream.Length}");
+                    }
 
                     if (bytesRead == 0)
                     {

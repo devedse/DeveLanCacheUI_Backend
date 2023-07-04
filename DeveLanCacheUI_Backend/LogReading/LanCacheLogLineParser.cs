@@ -16,6 +16,7 @@ namespace DeveLanCacheUI_Backend.LogReading
 
 
                 // Assuming [steam] 10.88.10.1 / - - - [28/Jun/2023:20:14:49 +0200] "GET /depot/434174/chunk/9437c354e87778aeafe94a65ee042432440d4037 HTTP/1.1" 200 392304 "-" "Valve/Steam HTTP Client 1.0" "HIT" "cache1-ams1.steamcontent.com" "-"
+                //          [127.0.0.1] 127.0.0.1 / - - - [01/Jul/2023:03:32:18 +0200] "GET /lancache-heartbeat HTTP/1.1" 204 0 "-" "Wget/1.19.4 (linux-gnu)" "-" "127.0.0.1" "-"
                 entry.Protocol = tokens[0].TrimStart('[').TrimEnd(']');
 
                 if (entry.Protocol == "steam")
