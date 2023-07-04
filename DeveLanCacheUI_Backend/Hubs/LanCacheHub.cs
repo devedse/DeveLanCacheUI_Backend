@@ -4,9 +4,9 @@ namespace DeveLanCacheUI_Backend.Hubs
 {
     public class LanCacheHub : Hub
     {
-        public async Task SendMessage(string user, string message)
+        public async Task NotifyChanges()
         {
-            await Clients.All.SendAsync("ReceiveMessage", user, message);
+            await Clients.All.SendAsync("UpdateDownloadEvents");
         }
     }
 }

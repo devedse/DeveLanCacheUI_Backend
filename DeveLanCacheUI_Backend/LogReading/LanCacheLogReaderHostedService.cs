@@ -1,7 +1,9 @@
 ﻿using DeveLanCacheUI_Backend.Db;
 using DeveLanCacheUI_Backend.Db.DbModels;
+using DeveLanCacheUI_Backend.Hubs;
 using DeveLanCacheUI_Backend.LogReading.Models;
 using DeveLanCacheUI_Backend.Steam;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Polly;
 using System.Text;
@@ -13,14 +15,17 @@ namespace DeveLanCacheUI_Backend.LogReading
         public IServiceProvider Services { get; }
 
         private readonly IConfiguration _configuration;
+        private readonly IHubContext<LanCacheHub> _lanCacheHubContext;
         private readonly ILogger<LanCacheLogReaderHostedService> _logger;
 
         public LanCacheLogReaderHostedService(IServiceProvider services,
             IConfiguration configuration,
+            IHubContext<LanCacheHub> lanCacheHubContext,
             ILogger<LanCacheLogReaderHostedService> logger)
         {
             Services = services;
             _configuration = configuration;
+            _lanCacheHubContext = lanCacheHubContext;
             _logger = logger;
         }
 
@@ -170,6 +175,7 @@ namespace DeveLanCacheUI_Backend.LogReading
                         }
 
                         await dbContext.SaveChangesAsync();
+                        await _lanCacheHubContext.Clients.All.SendAsync("UpdateDownloadEvents");
                     });
                 }
             }

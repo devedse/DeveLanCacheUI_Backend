@@ -57,10 +57,10 @@ https://linux.die.net/man/8/mount.cifs
 
 | Task | Progress |
 |:----:|:--------:|
-| Automated Deployments | 90% |
-| Dockerization | 90% |
+| Automated Deployments | 100% |
+| Dockerization | 100% |
 | Implement other protocols besides steam | 0% |
-| Auto refresh | 0% |
+| Auto refresh | 100% |
 | More data things | 0% |
 
 ## Build status

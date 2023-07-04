@@ -78,6 +78,7 @@ namespace DeveLanCacheUI_Backend
 
             app.MapControllers();
 
+            app.MapHub<ChatHub>("/chathub");
             app.MapHub<LanCacheHub>("/lancachehub");
 
             app.Run();
