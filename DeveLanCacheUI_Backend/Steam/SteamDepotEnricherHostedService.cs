@@ -184,6 +184,7 @@ namespace DeveLanCacheUI_Backend.Steam
                         _logger.LogWarning($"IO Exception while reading/writing file. This could be because file is in use. Retrying...");
                     }
                 }
+                await Task.Delay(1000);
             }
 
         }
