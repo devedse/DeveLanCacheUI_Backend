@@ -192,7 +192,7 @@ namespace DeveLanCacheUI_Backend.LogReading
                     else
                     {
                         var logFilePath = _configuration.GetValue<string>("LanCacheLogsDirectory")!;
-                        Console.WriteLine($"{DateTime.Now} No new log lines, waiting... Pos: {fstempmoetweg.Position} FsLength: {fstempmoetweg.Length} Length: {new FileInfo(Path.Combine(logFilePath, "access.log")).Length} CanRead: {fstempmoetweg.CanRead} BytesRead: {totalBytesRead}");
+                        Console.WriteLine($"{DateTime.Now} No new log lines, waiting...");
                         Thread.Sleep(1000);
                         continue;
                     }
@@ -247,18 +247,12 @@ namespace DeveLanCacheUI_Backend.LogReading
             }
         }
 
-        private static FileStream fstempmoetweg = null;
-        private static int totalBytesRead = 0;
 
         static IEnumerable<string> TailFrom2(string file, CancellationToken stoppingToken)
         {
-            
+
             using (var fileStream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
-                fstempmoetweg = fileStream;
-
-                fileStream.Seek(totalBytesRead, SeekOrigin.Begin);
-
                 const int BufferSize = 1024;
                 var buffer = new byte[BufferSize];
                 var leftoverBuffer = new List<byte>();
@@ -266,19 +260,9 @@ namespace DeveLanCacheUI_Backend.LogReading
 
                 while (true)
                 {
-
-
-
                     stoppingToken.ThrowIfCancellationRequested();
 
                     bytesRead = fileStream.Read(buffer, 0, BufferSize);
-
-                    totalBytesRead += bytesRead;
-
-                    if (fileStream.Position != totalBytesRead)
-                    {
-                        Console.WriteLine($"Pos: {fileStream.Position} BytesRead: {totalBytesRead} Length: {fileStream.Length}");
-                    }
 
                     if (bytesRead == 0)
                     {
@@ -309,7 +293,5 @@ namespace DeveLanCacheUI_Backend.LogReading
                 }
             }
         }
-
-
     }
 }
