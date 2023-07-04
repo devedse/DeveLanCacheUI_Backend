@@ -62,6 +62,7 @@ https://linux.die.net/man/8/mount.cifs
 | Implement other protocols besides steam | 0% |
 | Auto refresh | 100% |
 | More data things | 0% |
+| Dark Theme + Toggle | 90% (Won't remember on reload) |
 
 ## Build status
 
