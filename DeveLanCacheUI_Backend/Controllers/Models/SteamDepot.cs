@@ -1,6 +1,4 @@
-﻿using DeveLanCacheUI_Backend.Steam;
-
-namespace DeveLanCacheUI_Backend.Controllers.Models
+﻿namespace DeveLanCacheUI_Backend.Controllers.Models
 {
     public class SteamDepot
     {

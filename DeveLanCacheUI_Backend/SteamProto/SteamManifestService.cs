@@ -1,14 +1,4 @@
-﻿using DeveLanCacheUI_Backend.Db;
-using DeveLanCacheUI_Backend.Db.DbModels;
-using DeveLanCacheUI_Backend.LogReading;
-using DeveLanCacheUI_Backend.LogReading.Models;
-using Microsoft.EntityFrameworkCore;
-using Polly;
-using SteamKit2;
-using System.Text.Json;
-using System.Threading;
-
-namespace DeveLanCacheUI_Backend.SteamProto
+﻿namespace DeveLanCacheUI_Backend.SteamProto
 {
     public class SteamManifestService
     {
@@ -49,7 +39,7 @@ namespace DeveLanCacheUI_Backend.SteamProto
                     .Handle<Exception>()
                     .FallbackAsync(async (ct) =>
                     {
-                        Console.WriteLine($"Manifest saving: All retries failed, skipping...");
+                        _logger.LogInformation($"Manifest saving: All retries failed, skipping...");
                     });
 
                 var retryPolicy = Policy
@@ -57,7 +47,7 @@ namespace DeveLanCacheUI_Backend.SteamProto
                    .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                    (exception, timeSpan, context) =>
                    {
-                       Console.WriteLine($"Manifest saving: An error occurred while trying to save changes: {exception.Message}");
+                       _logger.LogInformation($"Manifest saving: An error occurred while trying to save changes: {exception.Message}");
                    });
 
                 await fallbackPolicy.WrapAsync(retryPolicy).ExecuteAsync(async () =>
@@ -103,7 +93,7 @@ namespace DeveLanCacheUI_Backend.SteamProto
 
                             if (!manifestResponse.IsSuccessStatusCode)
                             {
-                                Console.WriteLine($"Warning: Tried to obtain manifest for: {lanCacheLogEntryRaw.DownloadIdentifier} but status code was: {manifestResponse.StatusCode}");
+                                _logger.LogWarning($"Warning: Tried to obtain manifest for: {lanCacheLogEntryRaw.DownloadIdentifier} but status code was: {manifestResponse.StatusCode}");
                                 return;
                             }
                             var manifestBytes = await manifestResponse.Content.ReadAsByteArrayAsync();
@@ -113,7 +103,7 @@ namespace DeveLanCacheUI_Backend.SteamProto
 
                             if (dbManifest == null)
                             {
-                                Console.WriteLine($"Waring: Could not get manifest for depot: {lanCacheLogEntryRaw.DownloadIdentifier}");
+                                _logger.LogWarning($"Could not get manifest for depot: {lanCacheLogEntryRaw.DownloadIdentifier}");
                                 return;
                             }
 
@@ -121,12 +111,12 @@ namespace DeveLanCacheUI_Backend.SteamProto
                             if (dbValue != null)
                             {
                                 dbContext.Entry(dbValue).CurrentValues.SetValues(dbManifest);
-                                Console.WriteLine($"Info: Updated manifest for {lanCacheLogEntryRaw.DownloadIdentifier}");
+                                _logger.LogInformation($"Updated manifest for {lanCacheLogEntryRaw.DownloadIdentifier}");
                             }
                             else
                             {
                                 await dbContext.SteamManifests.AddAsync(dbManifest);
-                                Console.WriteLine($"Info: Added manifest for {lanCacheLogEntryRaw.DownloadIdentifier}");
+                                _logger.LogInformation($"Added manifest for {lanCacheLogEntryRaw.DownloadIdentifier}");
                             }
 
                             await File.WriteAllBytesAsync(fullPath, manifestBytes);

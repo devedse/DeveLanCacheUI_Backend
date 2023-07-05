@@ -2,9 +2,6 @@
 // from: http://damieng.com/blog/2006/08/08/calculating_crc32_in_c_and_net
 //
 
-using System;
-using System.Security.Cryptography;
-
 namespace DeveLanCacheUI_Backend.SteamProto
 {
     class Crc32 : HashAlgorithm

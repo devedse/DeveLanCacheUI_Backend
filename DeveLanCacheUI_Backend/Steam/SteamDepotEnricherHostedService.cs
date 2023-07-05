@@ -1,11 +1,4 @@
-﻿using DeveLanCacheUI_Backend.Db;
-using DeveLanCacheUI_Backend.Db.DbModels;
-using DeveLanCacheUI_Backend.LogReading.Models;
-using Microsoft.EntityFrameworkCore;
-using Polly;
-using System.Diagnostics;
-
-namespace DeveLanCacheUI_Backend.Steam
+﻿namespace DeveLanCacheUI_Backend.Steam
 {
     public class SteamDepotEnricherHostedService : BackgroundService
     {
@@ -50,11 +43,11 @@ namespace DeveLanCacheUI_Backend.Steam
 
                     if (firstFile != null)
                     {
-                        Console.WriteLine($"Found .CSV file to update our Depots Database: {firstFile}");
+                        _logger.LogInformation($"Found .CSV file to update our Depots Database: {firstFile}");
 
 
                         var curFileSize = new FileInfo(firstFile).Length;
-                        Console.WriteLine($"Waiting for file size to not increase anymore (as in, the copy is done). Current Size: {curFileSize}");
+                        _logger.LogInformation($"Waiting for file size to not increase anymore (as in, the copy is done). Current Size: {curFileSize}");
 
                         var fileSizeTimer = Stopwatch.StartNew();
 
@@ -112,7 +105,7 @@ namespace DeveLanCacheUI_Backend.Steam
                                 }
                             }
 
-                            Console.WriteLine($"Depot File {firstFile} read. Adding {depotToAppDict.Count} entries to db...");
+                            _logger.LogInformation($"Depot File {firstFile} read. Adding {depotToAppDict.Count} entries to db...");
 
 
 
@@ -179,7 +172,7 @@ namespace DeveLanCacheUI_Backend.Steam
                             var newFileName = Path.GetFileNameWithoutExtension(firstFile) + "_" + DateTime.Now.ToString("yyyy-dd-M--HH-mm-ss") + Path.GetExtension(firstFile);
                             var newFilePath = Path.Combine(processedDirectoryPath, newFileName);
                             File.Move(firstFile, newFilePath);
-                            Console.WriteLine($"File {firstFile} moved to {newFilePath}");
+                            _logger.LogInformation($"File {firstFile} moved to {newFilePath}");
                         }
                         catch (IOException ex)
                         {

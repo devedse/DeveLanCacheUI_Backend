@@ -1,15 +1,4 @@
-﻿using DeveLanCacheUI_Backend.Db;
-using DeveLanCacheUI_Backend.Db.DbModels;
-using DeveLanCacheUI_Backend.Hubs;
-using DeveLanCacheUI_Backend.LogReading.Models;
-using DeveLanCacheUI_Backend.Steam;
-using DeveLanCacheUI_Backend.SteamProto;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
-using Polly;
-using System.Text;
-
-namespace DeveLanCacheUI_Backend.LogReading
+﻿namespace DeveLanCacheUI_Backend.LogReading
 {
     public class LanCacheLogReaderHostedService : BackgroundService
     {
@@ -65,32 +54,26 @@ namespace DeveLanCacheUI_Backend.LogReading
             }
             var accessLogFilePath = Path.Combine(logFilePath, "access.log");
 
-
             var allLogLines = TailFrom2(accessLogFilePath, stoppingToken);
             var parsedLogLines = allLogLines.Select(t => t == null ? null : LanCacheLogLineParser.ParseLogEntry(t));
-            var batches = Batch2(parsedLogLines, 1000, oldestLog);
+            var batches = Batch2(parsedLogLines, 5000, oldestLog);
 
             int totalLinesProcessed = 0;
 
             foreach (var currentSet in batches)
             {
-                //parsedLogLines = parsedLogLines
-                //    .Where(t => t == null || t.DateTime > oldestLog)
-                //    .Take(1000)
-                //    .TakeWhile(t => t != null);
-                Console.WriteLine($"Processing {currentSet.Count} lines... First DateTime: {currentSet.FirstOrDefault()?.DateTime} (Total processed: {totalLinesProcessed})");
+                _logger.LogInformation("Processing {count} lines... First DateTime: {firstDate} (Total processed: {totalLinesProcessed})", 
+                    currentSet.Count, currentSet.FirstOrDefault()?.DateTime, totalLinesProcessed);
                 totalLinesProcessed += currentSet.Count;
 
                 await using (var scope = _services.CreateAsyncScope())
                 {
-
-
                     var retryPolicy = Policy
                         .Handle<DbUpdateException>()
                         .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                         (exception, timeSpan, context) =>
                         {
-                            Console.WriteLine($"An error occurred while trying to save changes: {exception.Message}");
+                            _logger.LogError($"An error occurred while trying to save changes: {exception.Message}");
                         });
 
                     await retryPolicy.ExecuteAsync(async () =>
@@ -108,7 +91,7 @@ namespace DeveLanCacheUI_Backend.LogReading
                         {
                             if (lanCacheLogLine.CacheIdentifier == "steam" && lanCacheLogLine.Request.Contains("/manifest/") && DateTime.Now < lanCacheLogLine.DateTime.AddDays(14))
                             {
-                                Console.WriteLine($"Found manifest for Depot: {lanCacheLogLine.DownloadIdentifier}");
+                                _logger.LogInformation($"Found manifest for Depot: {lanCacheLogLine.DownloadIdentifier}");
                                 var ttt = lanCacheLogLine;
                                 _steamManifestService.TryToDownloadManifest(ttt);
                             }
@@ -133,7 +116,7 @@ namespace DeveLanCacheUI_Backend.LogReading
 
                             if (cachedEvent == null || !(cachedEvent.LastUpdatedAt > lanCacheLogLine.DateTime.AddMinutes(-5)))
                             {
-                                Console.WriteLine($"Adding new event because more then 5 minutes no update: {cacheKey} ({lanCacheLogLine.DateTime})");
+                                _logger.LogInformation($"Adding new event because more then 5 minutes no update: {cacheKey} ({lanCacheLogLine.DateTime})");
 
                                 int.TryParse(lanCacheLogLine.DownloadIdentifier, out var downloadIdentifierInt);
                                 cachedEvent = new DbDownloadEvent()
@@ -189,11 +172,14 @@ namespace DeveLanCacheUI_Backend.LogReading
                         //Only log once in 30 times
                         if (dontLogForSpecificCounter % 30 == 0)
                         {
-                            Console.WriteLine($"{DateTime.Now} No new log lines, waiting...");
+                            _logger.LogInformation($"{DateTime.Now} No new log lines, waiting...");
                         }
                         dontLogForSpecificCounter++;
                         Thread.Sleep(1000);
                         continue;
+                        var logFilePath = _configuration.GetValue<string>("LanCacheLogsDirectory")!;
+                        _logger.LogInformation($"No new log lines, waiting...");
+                        Thread.Sleep(5000);
                     }
                 }
                 else if (logEntry.DateTime > skipOlderThen)
@@ -210,7 +196,7 @@ namespace DeveLanCacheUI_Backend.LogReading
                     skipCounter++;
                     if (skipCounter % 1000 == 0)
                     {
-                        Console.WriteLine($"Skipped total of {skipCounter} lines (already processed)");
+                        _logger.LogInformation($"Skipped total of {skipCounter} lines (already processed)");
                     }
                 }
             }

@@ -1,16 +1,4 @@
-﻿/*
- * This file is subject to the terms and conditions defined in
- * file 'license.txt', which is part of this source code package.
- */
-
-
-
-using System;
-using System.IO;
-using System.IO.Compression;
-using System.Text;
-
-namespace DeveLanCacheUI_Backend.SteamProto
+﻿namespace DeveLanCacheUI_Backend.SteamProto
 {
     static class ZipUtil
     {

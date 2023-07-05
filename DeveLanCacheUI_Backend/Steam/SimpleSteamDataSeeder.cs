@@ -1,6 +1,4 @@
-﻿using DeveLanCacheUI_Backend.Db;
-
-namespace DeveLanCacheUI_Backend.Steam
+﻿namespace DeveLanCacheUI_Backend.Steam
 {
     public static class SimpleSteamDataSeeder
     {

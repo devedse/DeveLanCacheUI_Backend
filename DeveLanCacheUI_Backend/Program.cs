@@ -1,17 +1,3 @@
-
-using DeveLanCacheUI_Backend.Db;
-using DeveLanCacheUI_Backend.DeveHashImageGeneratorStuff;
-using DeveLanCacheUI_Backend.Helpers;
-using DeveLanCacheUI_Backend.Hubs;
-using DeveLanCacheUI_Backend.LogReading;
-using DeveLanCacheUI_Backend.Steam;
-using DeveLanCacheUI_Backend.SteamProto;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.ResponseCompression;
-using Microsoft.AspNetCore.Rewrite;
-using Microsoft.EntityFrameworkCore;
-using System.Text.Json.Serialization;
-
 namespace DeveLanCacheUI_Backend
 {
     public class Program
@@ -30,10 +16,9 @@ namespace DeveLanCacheUI_Backend
             var conString = builder.Configuration.GetConnectionString("DefaultConnection");
             var conStringReplaced = conString?.Replace("{DeveLanCacheUIDataDirectory}", deveLanCacheUIDataDirectory ?? "");
 
+            var sqliteFileName = SqliteFolderCreator.GetFileNameFromSqliteConnectionString(conStringReplaced);
             try
             {
-                var sqliteFileName = SqliteFolderCreator.GetFileNameFromSqliteConnectionString(conStringReplaced);
-
                 var invalidPathChars = Path.GetInvalidPathChars();
                 if (!string.IsNullOrWhiteSpace(sqliteFileName) && sqliteFileName.All(t => !invalidPathChars.Any(z => t == z)))
                 {
@@ -65,6 +50,8 @@ namespace DeveLanCacheUI_Backend
             }).AddJsonOptions(x =>
                  x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+            // Swagger
+            builder.Services.AddControllers().AddJsonOptions(x => x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
@@ -96,16 +83,34 @@ namespace DeveLanCacheUI_Backend
                     });
             });
 
+            // Configure Logging
+            Logger logger = new LoggerConfiguration()
+                .MinimumLevel.Information()
+                // Spams "request finished in ms" messages
+                .MinimumLevel.Override("Microsoft.AspNetCore.Hosting.Diagnostics", LogEventLevel.Warning)
+                // Hides Entity Framework generated queries being written to console
+                .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", LogEventLevel.Warning)
+                .Enrich.FromLogContext()
+                .WriteTo.Console(LogEventLevel.Information)
+                .CreateLogger();
+
+            builder.Services.AddLogging(l =>
+            {
+                l.ClearProviders();
+                l.AddSerilog(logger, true);
+            });
+
             var app = builder.Build();
 
             app.UseResponseCompression();
 
+            // Applying migrations
             using (var scope = app.Services.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();
                 Console.WriteLine("Migrating DB (ensure the database folder from the query string exists)...");
                 dbContext.Database.Migrate();
-                Console.WriteLine("DB migration completed");
+                logger.Information("DB migration completed");
             }
 
             //Redirect to /swagger

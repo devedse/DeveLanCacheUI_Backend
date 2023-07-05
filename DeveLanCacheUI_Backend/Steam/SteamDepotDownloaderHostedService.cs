@@ -1,9 +1,4 @@
-﻿using DeveLanCacheUI_Backend.Db;
-using DeveLanCacheUI_Backend.Db.DbModels;
-using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
-
-namespace DeveLanCacheUI_Backend.Steam
+﻿namespace DeveLanCacheUI_Backend.Steam
 {
     public class SteamDepotDownloaderHostedService : BackgroundService
     {

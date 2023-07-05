@@ -1,8 +1,4 @@
-﻿using DeveLanCacheUI_Backend.Db.DbModels;
-using DeveLanCacheUI_Backend.Steam;
-using Microsoft.EntityFrameworkCore;
-
-namespace DeveLanCacheUI_Backend.Db
+﻿namespace DeveLanCacheUI_Backend.Db
 {
     public class DeveLanCacheUIDbContext : DbContext
     {

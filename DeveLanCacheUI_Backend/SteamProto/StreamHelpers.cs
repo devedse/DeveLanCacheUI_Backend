@@ -1,7 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Text;
-
-namespace DeveLanCacheUI_Backend.SteamProto
+﻿namespace DeveLanCacheUI_Backend.SteamProto
 {
     public static class StreamHelpers
     {

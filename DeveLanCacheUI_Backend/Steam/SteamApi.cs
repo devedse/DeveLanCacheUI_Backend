@@ -1,8 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Text.Json;
-
-namespace DeveLanCacheUI_Backend.Steam
+﻿namespace DeveLanCacheUI_Backend.Steam
 {
     public static class SteamApi
     {
