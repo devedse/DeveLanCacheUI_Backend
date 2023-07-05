@@ -18,4 +18,8 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\DeveLanCacheUI_Backend\DeveLanCacheUI_Backend.csproj" />
+  </ItemGroup>
+
 </Project>

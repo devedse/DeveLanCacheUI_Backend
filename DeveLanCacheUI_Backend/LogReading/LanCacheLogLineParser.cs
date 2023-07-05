@@ -5,6 +5,60 @@ namespace DeveLanCacheUI_Backend.LogReading
 {
     public static class LanCacheLogLineParser
     {
+        private static Dictionary<char, char> SuperChars = new Dictionary<char, char>()
+        {
+            { '"', '"' },
+            { '\'', '\'' },
+            { '[', ']' }
+        };
+
+        public static string[] SuperSplit(string logLine)
+        {
+            int lastCutter = 0;
+            int cur = 0;
+            string[] splitted = new string[20];
+            bool skipChar = false;
+
+
+            char? curCloseCharWaiter = null;
+
+            for (int i = 0; i < logLine.Length; i++)
+            {
+                var curChar = logLine[i];
+                if (!skipChar)
+                {
+                    if (curCloseCharWaiter == null && SuperChars.TryGetValue(curChar, out var waitChar))
+                    {
+                        curCloseCharWaiter = waitChar;
+                    }
+                    else if (curCloseCharWaiter == curChar)
+                    {
+                        curCloseCharWaiter = null;
+                    }
+                    else if (curChar == '\\')
+                    {
+                        skipChar = true;
+                    }
+                    else if (curCloseCharWaiter == null && curChar == ' ')
+                    {
+                        splitted[cur++] = logLine.Substring(lastCutter, i - lastCutter);
+                        lastCutter = i + 1;
+                    }
+                }
+                else
+                {
+                    skipChar = false;
+                }
+            }
+
+            //Add remainder
+            if (lastCutter != logLine.Length)
+            {
+                splitted[cur++] = logLine.Substring(lastCutter, logLine.Length - lastCutter);
+            }
+            return splitted;
+        }
+
         public static LanCacheLogEntry ParseLogEntry(string logLine)
         {
             var entry = new LanCacheLogEntry();
