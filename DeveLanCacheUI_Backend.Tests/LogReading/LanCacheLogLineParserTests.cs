@@ -30,8 +30,7 @@ namespace DeveLanCacheUI_Backend.Tests.LogReading
         [TestMethod]
         public void SplittedToLanCacheLogEntryRaw_ParseCorrectly1()
         {
-            var splitted = LanCacheLogLineParser.SuperSplit("[steam] 10.88.10.1 / - - - [28/Jun/2023:20:14:49 +0200] \"GET /depot/434174/chunk/9437c354e87778aeafe94a65ee042432440d4037 HTTP/1.1\" 200 392304 \"-\" \"Valve/Steam HTTP Client 1.0\" \"HIT\" \"cache1-ams1.steamcontent.com\" \"-\"");
-            var logEntry = LanCacheLogLineParser.SplittedToLanCacheLogEntryRaw(splitted);
+            var logEntry = LanCacheLogLineParser.LogLineToLanCacheLogEntryRaw("[steam] 10.88.10.1 / - - - [28/Jun/2023:20:14:49 +0200] \"GET /depot/434174/chunk/9437c354e87778aeafe94a65ee042432440d4037 HTTP/1.1\" 200 392304 \"-\" \"Valve/Steam HTTP Client 1.0\" \"HIT\" \"cache1-ams1.steamcontent.com\" \"-\"");
 
             Assert.AreEqual("steam", logEntry.CacheIdentifier);
             Assert.AreEqual("10.88.10.1", logEntry.RemoteAddress);

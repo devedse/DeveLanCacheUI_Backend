@@ -90,7 +90,7 @@ namespace DeveLanCacheUI_Backend.LogReading
                     {
                         using var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();
 
-                        var parsedLogLinesSteam = currentSet.Where(t => t.Protocol == "steam");
+                        var parsedLogLinesSteam = currentSet.Where(t => t.CacheIdentifier == "steam");
 
                         Dictionary<int, DbSteamDepot> steamDepotsCache = new Dictionary<int, DbSteamDepot>();
                         Dictionary<string, DbSteamAppDownloadEvent> steamAppDownloadEventsCache = new Dictionary<string, DbSteamAppDownloadEvent>();
@@ -112,7 +112,7 @@ namespace DeveLanCacheUI_Backend.LogReading
                             }
 
 
-                            var groupedOnClientIps = steamDepotId.GroupBy(t => t.IpAddress);
+                            var groupedOnClientIps = steamDepotId.GroupBy(t => t.RemoteAddress);
 
                             foreach (var groupOnIp in groupedOnClientIps)
                             {
@@ -146,7 +146,7 @@ namespace DeveLanCacheUI_Backend.LogReading
 
                         foreach (var steamLogLine in parsedLogLinesSteam)
                         {
-                            var cacheKey = $"{steamLogLine.SteamDepotId}_{steamLogLine.IpAddress}";
+                            var cacheKey = $"{steamLogLine.SteamDepotId}_{steamLogLine.RemoteAddress}";
                             var cachedEvent = steamAppDownloadEventsCache[cacheKey];
 
                             if (!(cachedEvent.LastUpdatedAt > steamLogLine.DateTime.AddMinutes(-5)))
@@ -164,13 +164,13 @@ namespace DeveLanCacheUI_Backend.LogReading
                             }
 
                             cachedEvent.LastUpdatedAt = steamLogLine.DateTime;
-                            if (steamLogLine.CacheHitStatus == "HIT")
+                            if (steamLogLine.UpstreamCacheStatus == "HIT")
                             {
-                                cachedEvent.CacheHitBytes += steamLogLine.ContentLength;
+                                cachedEvent.CacheHitBytes += steamLogLine.BodyBytesSentLong;
                             }
                             else
                             {
-                                cachedEvent.CacheMissBytes += steamLogLine.ContentLength;
+                                cachedEvent.CacheMissBytes += steamLogLine.BodyBytesSentLong;
                             }
                         }
 
@@ -181,11 +181,11 @@ namespace DeveLanCacheUI_Backend.LogReading
             }
         }
 
-        public IEnumerable<List<LanCacheLogEntry>> Batch2(IEnumerable<LanCacheLogEntry?> collection, int batchSize, DateTime skipOlderThen)
+        public IEnumerable<List<LanCacheLogEntryRaw>> Batch2(IEnumerable<LanCacheLogEntryRaw?> collection, int batchSize, DateTime skipOlderThen)
         {
             int skipCounter = 0;
 
-            var nextbatch = new List<LanCacheLogEntry>();
+            var nextbatch = new List<LanCacheLogEntryRaw>();
             foreach (var logEntry in collection)
             {
                 if (logEntry == null)
@@ -193,7 +193,7 @@ namespace DeveLanCacheUI_Backend.LogReading
                     if (nextbatch.Any())
                     {
                         yield return nextbatch;
-                        nextbatch = new List<LanCacheLogEntry>();
+                        nextbatch = new List<LanCacheLogEntryRaw>();
                     }
                     else
                     {
@@ -209,7 +209,7 @@ namespace DeveLanCacheUI_Backend.LogReading
                     if (nextbatch.Count == batchSize)
                     {
                         yield return nextbatch;
-                        nextbatch = new List<LanCacheLogEntry>();
+                        nextbatch = new List<LanCacheLogEntryRaw>();
                     }
                 }
                 else
