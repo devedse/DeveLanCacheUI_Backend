@@ -9,27 +9,55 @@ namespace DeveLanCacheUI_Backend.LogReading
         {
             { '"', '"' },
             { '\'', '\'' },
-            { '[', ']' }
+            { '[', ']' },
+            { '(', ')' },
+            { '{', '}' }
         };
 
         public static string[] SuperSplit(string logLine)
         {
             int lastCutter = 0;
             int cur = 0;
-            string[] splitted = new string[20];
+            string[] splitted = new string[15];
             bool skipChar = false;
 
+            char? lastOpenCharacter = null;
+            char? lastCloseCharacter = null;
 
             char? curCloseCharWaiter = null;
 
             for (int i = 0; i < logLine.Length; i++)
             {
                 var curChar = logLine[i];
-                if (!skipChar)
+                bool lastCharacter = i == logLine.Length - 1;
+                if (lastCharacter)
                 {
-                    if (curCloseCharWaiter == null && SuperChars.TryGetValue(curChar, out var waitChar))
+
+                }
+
+                if (!skipChar || lastCharacter)
+                {
+                    if (lastCharacter || (curCloseCharWaiter == null && curChar == ' '))
+                    {
+                        var linePart = logLine.Substring(lastCutter, i - lastCutter + (lastCharacter ? 1 : 0));
+                        if (lastOpenCharacter != null)
+                        {
+                            linePart = linePart.TrimStart(lastOpenCharacter.Value);
+                        }
+                        if (lastCloseCharacter != null)
+                        {
+                            linePart = linePart.TrimEnd(lastCloseCharacter.Value);
+                        }
+                        lastOpenCharacter = null;
+                        lastCloseCharacter = null;
+                        splitted[cur++] = linePart;
+                        lastCutter = i + 1;
+                    }
+                    else if (curCloseCharWaiter == null && SuperChars.TryGetValue(curChar, out var waitChar))
                     {
                         curCloseCharWaiter = waitChar;
+                        lastOpenCharacter = curChar;
+                        lastCloseCharacter = waitChar;
                     }
                     else if (curCloseCharWaiter == curChar)
                     {
@@ -39,22 +67,11 @@ namespace DeveLanCacheUI_Backend.LogReading
                     {
                         skipChar = true;
                     }
-                    else if (curCloseCharWaiter == null && curChar == ' ')
-                    {
-                        splitted[cur++] = logLine.Substring(lastCutter, i - lastCutter);
-                        lastCutter = i + 1;
-                    }
                 }
                 else
                 {
                     skipChar = false;
                 }
-            }
-
-            //Add remainder
-            if (lastCutter != logLine.Length)
-            {
-                splitted[cur++] = logLine.Substring(lastCutter, logLine.Length - lastCutter);
             }
             return splitted;
         }
