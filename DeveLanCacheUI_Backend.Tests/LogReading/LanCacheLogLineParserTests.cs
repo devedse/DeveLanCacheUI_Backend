@@ -28,6 +28,27 @@ namespace DeveLanCacheUI_Backend.Tests.LogReading
         }
 
         [TestMethod]
+        public void SplittedToLanCacheLogEntryRaw_ParseCorrectly1()
+        {
+            var splitted = LanCacheLogLineParser.SuperSplit("[steam] 10.88.10.1 / - - - [28/Jun/2023:20:14:49 +0200] \"GET /depot/434174/chunk/9437c354e87778aeafe94a65ee042432440d4037 HTTP/1.1\" 200 392304 \"-\" \"Valve/Steam HTTP Client 1.0\" \"HIT\" \"cache1-ams1.steamcontent.com\" \"-\"");
+            var logEntry = LanCacheLogLineParser.SplittedToLanCacheLogEntryRaw(splitted);
+
+            Assert.AreEqual("steam", logEntry.CacheIdentifier);
+            Assert.AreEqual("10.88.10.1", logEntry.RemoteAddress);
+            Assert.AreEqual("-", logEntry.ForwardedFor);
+            Assert.AreEqual("-", logEntry.RemoteUser);
+            Assert.AreEqual("28/Jun/2023:20:14:49 +0200", logEntry.TimeLocal);
+            Assert.AreEqual("GET /depot/434174/chunk/9437c354e87778aeafe94a65ee042432440d4037 HTTP/1.1", logEntry.Request);
+            Assert.AreEqual("200", logEntry.Status);
+            Assert.AreEqual("392304", logEntry.BodyBytesSent);
+            Assert.AreEqual("-", logEntry.Referer);
+            Assert.AreEqual("Valve/Steam HTTP Client 1.0", logEntry.UserAgent);
+            Assert.AreEqual("HIT", logEntry.UpstreamCacheStatus);
+            Assert.AreEqual("cache1-ams1.steamcontent.com", logEntry.Host);
+            Assert.AreEqual("-", logEntry.HttpRange);
+        }
+
+        [TestMethod]
         public void SuperSplit_ParseCorrectly2()
         {
             var splitted = LanCacheLogLineParser.SuperSplit("[127.0.0.1] 127.0.0.1 / - - - [01/Jul/2023:03:32:18 +0200] \"GET /lancache-heartbeat HTTP/1.1\" 204 0 \"-\" \"Wget/1.19.4 (linux-gnu)\" \"-\" \"127.0.0.1\" \"-\"");

@@ -76,6 +76,26 @@ namespace DeveLanCacheUI_Backend.LogReading
             return splitted;
         }
 
+        public static LanCacheLogEntryRaw SplittedToLanCacheLogEntryRaw(string[] splittedLogEntry)
+        {
+            return new LanCacheLogEntryRaw
+            {
+                CacheIdentifier = splittedLogEntry[0],
+                RemoteAddress = splittedLogEntry[1],
+                ForwardedFor = splittedLogEntry[3],
+                RemoteUser = splittedLogEntry[5],
+                TimeLocal = splittedLogEntry[6],
+                Request = splittedLogEntry[7],
+                Status = splittedLogEntry[8],
+                BodyBytesSent = splittedLogEntry[9],
+                Referer = splittedLogEntry[10],
+                UserAgent = splittedLogEntry[11],
+                UpstreamCacheStatus = splittedLogEntry[12],
+                Host = splittedLogEntry[13],
+                HttpRange = splittedLogEntry[14]
+            };
+        }
+
         public static LanCacheLogEntry ParseLogEntry(string logLine)
         {
             var entry = new LanCacheLogEntry();
