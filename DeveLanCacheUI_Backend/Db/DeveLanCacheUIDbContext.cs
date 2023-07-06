@@ -7,7 +7,7 @@ namespace DeveLanCacheUI_Backend.Db
     public class DeveLanCacheUIDbContext : DbContext
     {
         public DbSet<DbSteamDepot> SteamDepots => Set<DbSteamDepot>();
-        public DbSet<DbSteamAppDownloadEvent> SteamAppDownloadEvents => Set<DbSteamAppDownloadEvent>();
+        public DbSet<DbDownloadEvent> DownloadEvents => Set<DbDownloadEvent>();
 
         public DeveLanCacheUIDbContext(DbContextOptions options) : base(options)
         {

@@ -39,8 +39,7 @@ namespace DeveLanCacheUI_Backend.LogReading.Models
         public DateTime DateTime { get; private set; }
         public long BodyBytesSentLong { get; private set; }
 
-        //Steam Only
-        public int? SteamDepotId { get; private set; }
+        public string? DownloadIdentifier { get; private set; }
 
         public void CalculateFields()
         {
@@ -53,12 +52,46 @@ namespace DeveLanCacheUI_Backend.LogReading.Models
                 var splittedUrl = urlPart.Split('/');
                 if (splittedUrl[1] == "depot")
                 {
-                    SteamDepotId = int.Parse(splittedUrl[2]);
+                    DownloadIdentifier = splittedUrl[2];
                 }
                 else
                 {
                     throw new InvalidOperationException($"Could not parse SteamDepotId from {Request}");
                 }
+            }
+            else if (CacheIdentifier == "blizzard")
+            {
+                var urlPart = Request.Split(' ')[1];
+                var splittedUrl = urlPart.Split('/');
+                if (splittedUrl.Length >= 3 && splittedUrl[2].StartsWith("bnt"))
+                {
+                    splittedUrl[2] = "bnt";
+                }
+                DownloadIdentifier = string.Join("/", splittedUrl.Skip(1).Take(2));
+            }
+            else if (CacheIdentifier == "epicgames")
+            {
+                DownloadIdentifier = "unknown";
+            }
+            else if (CacheIdentifier == "riot")
+            {
+                DownloadIdentifier = "unknown";
+            }
+            else if (CacheIdentifier == "xboxlive")
+            {
+                var urlPart = Request.Split(' ')[1];
+                var lastPart = urlPart.Split('/').Last();
+                //BehaviourInteractive.DeadbyDaylightWindows_7.0.200.0_x64__b1gz2xhdanwfm.msixvc
+                var lastPartSplitted = lastPart.Split('_');
+                DownloadIdentifier = lastPartSplitted.First();
+            }
+            else if (CacheIdentifier == "wsus")
+            {
+                DownloadIdentifier = "unknown";
+            }
+            else
+            {
+                DownloadIdentifier = "UnknownDownloadIdentifier";
             }
         }
 

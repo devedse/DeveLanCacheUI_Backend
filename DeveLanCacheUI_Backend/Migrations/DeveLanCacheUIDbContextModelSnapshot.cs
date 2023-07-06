@@ -17,7 +17,7 @@ namespace DeveLanCacheUI_Backend.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "7.0.8");
 
-            modelBuilder.Entity("DeveLanCacheUI_Backend.Db.DbModels.DbSteamAppDownloadEvent", b =>
+            modelBuilder.Entity("DeveLanCacheUI_Backend.Db.DbModels.DbDownloadEvent", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -25,6 +25,10 @@ namespace DeveLanCacheUI_Backend.Migrations
 
                     b.Property<long>("CacheHitBytes")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("CacheIdentifier")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.Property<long>("CacheMissBytes")
                         .HasColumnType("INTEGER");
@@ -36,17 +40,18 @@ namespace DeveLanCacheUI_Backend.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("DownloadIdentifier")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("DownloadIdentifierString")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("LastUpdatedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("SteamDepotId")
-                        .HasColumnType("INTEGER");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("SteamDepotId");
-
-                    b.ToTable("SteamAppDownloadEvents");
+                    b.ToTable("DownloadEvents");
                 });
 
             modelBuilder.Entity("DeveLanCacheUI_Backend.Db.DbModels.DbSteamDepot", b =>
@@ -61,22 +66,6 @@ namespace DeveLanCacheUI_Backend.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("SteamDepots");
-                });
-
-            modelBuilder.Entity("DeveLanCacheUI_Backend.Db.DbModels.DbSteamAppDownloadEvent", b =>
-                {
-                    b.HasOne("DeveLanCacheUI_Backend.Db.DbModels.DbSteamDepot", "SteamDepot")
-                        .WithMany("DownloadEvents")
-                        .HasForeignKey("SteamDepotId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("SteamDepot");
-                });
-
-            modelBuilder.Entity("DeveLanCacheUI_Backend.Db.DbModels.DbSteamDepot", b =>
-                {
-                    b.Navigation("DownloadEvents");
                 });
 #pragma warning restore 612, 618
         }

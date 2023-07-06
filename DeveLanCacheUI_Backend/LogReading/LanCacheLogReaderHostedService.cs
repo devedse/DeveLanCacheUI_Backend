@@ -44,7 +44,7 @@ namespace DeveLanCacheUI_Backend.LogReading
             await using (var scope = Services.CreateAsyncScope())
             {
                 using var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();
-                var lastUpdatedItem = await dbContext.SteamAppDownloadEvents.OrderByDescending(t => t.LastUpdatedAt).FirstOrDefaultAsync();
+                var lastUpdatedItem = await dbContext.DownloadEvents.OrderByDescending(t => t.LastUpdatedAt).FirstOrDefaultAsync();
                 if (lastUpdatedItem != null)
                 {
                     oldestLog = lastUpdatedItem.LastUpdatedAt;
@@ -90,77 +90,93 @@ namespace DeveLanCacheUI_Backend.LogReading
                     {
                         using var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();
 
-                        var parsedLogLinesSteam = currentSet.Where(t => t.CacheIdentifier == "steam");
+                        //var filteredLogLines = currentSet.Where(t => t.CacheIdentifier == "steam");
+                        var filteredLogLines = currentSet.Where(t => t.CacheIdentifier != "127.0.0.1");
 
-                        Dictionary<int, DbSteamDepot> steamDepotsCache = new Dictionary<int, DbSteamDepot>();
-                        Dictionary<string, DbSteamAppDownloadEvent> steamAppDownloadEventsCache = new Dictionary<string, DbSteamAppDownloadEvent>();
+                        //Dictionary<int, DbSteamDepot> steamDepotsCache = new Dictionary<int, DbSteamDepot>();
+                        Dictionary<string, DbDownloadEvent> steamAppDownloadEventsCache = new Dictionary<string, DbDownloadEvent>();
 
-                        var steamDepotIds = parsedLogLinesSteam.GroupBy(t => t.SteamDepotId);
+                        //var groupedLogLines = parsedLogLinesSteam.GroupBy(t => new { t.CacheIdentifier, t.DownloadIdentifier });
 
-                        foreach (var steamDepotId in steamDepotIds)
+                        //foreach (var group in groupedLogLines)
+                        //{
+                        //    var groupedOnClientIps = group.GroupBy(t => t.RemoteAddress);
+
+                        //    foreach (var groupOnIp in groupedOnClientIps)
+                        //    {
+                        //        var firstUpdateEntryForThisDepotId = group.OrderBy(t => t.DateTime).First();
+
+                        //        //See if anything happened here in the last 5 minutes
+                        //        var foundEventInCache = await dbContext.DownloadEvents
+                        //            .FirstOrDefaultAsync(t =>
+                        //                t.CacheIdentifier == group.Key.CacheIdentifier &&
+                        //                t.DownloadIdentifierString == group.Key.DownloadIdentifier &&
+                        //                t.ClientIp == groupOnIp.Key &&
+                        //                t.LastUpdatedAt > firstUpdateEntryForThisDepotId.DateTime.AddMinutes(-5)
+                        //                );
+
+                        //        if (foundEventInCache != null)
+                        //        {
+                        //            var cacheKey = $"{group.Key.CacheIdentifier}_||_{group.Key.DownloadIdentifier}_||_{groupOnIp.Key}";
+                        //            steamAppDownloadEventsCache.Add(cacheKey, foundEventInCache);
+                        //        }
+
+                        //        //var cacheKey = $"{group.Key.CacheIdentifier}_||_{group.Key.DownloadIdentifier}_||_{groupOnIp.Key}";
+                        //        //if (foundEventInCache == null)
+                        //        //{
+                        //        //    Console.WriteLine($"Adding new event: {cacheKey} ({firstUpdateEntryForThisDepotId.DateTime})");
+                        //        //    int.TryParse(group.Key.DownloadIdentifier, out var downloadIdentifierInt);
+                        //        //    foundEventInCache = new DbDownloadEvent()
+                        //        //    {
+                        //        //        CacheIdentifier = group.Key.CacheIdentifier,
+                        //        //        DownloadIdentifier = downloadIdentifierInt,
+                        //        //        DownloadIdentifierString = group.Key.DownloadIdentifier,
+                        //        //        CreatedAt = firstUpdateEntryForThisDepotId.DateTime,
+                        //        //        LastUpdatedAt = firstUpdateEntryForThisDepotId.DateTime,
+                        //        //        ClientIp = groupOnIp.Key
+                        //        //    };
+                        //        //    await dbContext.DownloadEvents.AddAsync(foundEventInCache);
+                        //        //}
+                        //        //steamAppDownloadEventsCache.Add(cacheKey, foundEventInCache);
+                        //    }
+                        //}
+
+                        foreach (var steamLogLine in filteredLogLines)
                         {
-                            var foundInDb = await dbContext.SteamDepots.FirstOrDefaultAsync(t => t.Id == steamDepotId.Key);
-                            if (foundInDb == null)
+                            var cacheKey = $"{steamLogLine.CacheIdentifier}_||_{steamLogLine.DownloadIdentifier}_||_{steamLogLine.RemoteAddress}";
+                            steamAppDownloadEventsCache.TryGetValue(cacheKey, out var cachedEvent);
+
+                            if (cachedEvent == null)
                             {
-                                Console.WriteLine($"Found new Steam Depot Id: {steamDepotId.Key.Value}");
-                                var depotId = steamDepotId.Key.Value;
-                                foundInDb = new DbSteamDepot()
+                                cachedEvent = await dbContext.DownloadEvents
+                                   .FirstOrDefaultAsync(t =>
+                                       t.CacheIdentifier == steamLogLine.CacheIdentifier &&
+                                       t.DownloadIdentifierString == steamLogLine.DownloadIdentifier &&
+                                       t.ClientIp == steamLogLine.RemoteAddress &&
+                                       t.LastUpdatedAt > steamLogLine.DateTime.AddMinutes(-5)
+                                       );
+                                if (cachedEvent != null)
                                 {
-                                    Id = depotId
-                                };
-                                await dbContext.SteamDepots.AddAsync(foundInDb);
-                            }
-
-
-                            var groupedOnClientIps = steamDepotId.GroupBy(t => t.RemoteAddress);
-
-                            foreach (var groupOnIp in groupedOnClientIps)
-                            {
-                                var firstUpdateEntryForThisDepotId = steamDepotId.OrderBy(t => t.DateTime).First();
-
-                                //See if anything happened here in the last 5 minutes
-                                var foundEventInCache = await dbContext.SteamAppDownloadEvents
-                                    .FirstOrDefaultAsync(t =>
-                                        t.SteamDepotId == steamDepotId.Key &&
-                                        t.ClientIp == groupOnIp.Key &&
-                                        t.LastUpdatedAt > firstUpdateEntryForThisDepotId.DateTime.AddMinutes(-5)
-                                        );
-
-                                var cacheKey = $"{steamDepotId.Key}_{groupOnIp.Key}";
-                                if (foundEventInCache == null)
-                                {
-                                    Console.WriteLine($"Adding new event: {cacheKey} ({firstUpdateEntryForThisDepotId.DateTime})");
-                                    foundEventInCache = new DbSteamAppDownloadEvent()
-                                    {
-                                        CreatedAt = firstUpdateEntryForThisDepotId.DateTime,
-                                        LastUpdatedAt = firstUpdateEntryForThisDepotId.DateTime,
-                                        SteamDepotId = steamDepotId.Key.Value,
-                                        ClientIp = groupOnIp.Key
-                                    };
-                                    await dbContext.SteamAppDownloadEvents.AddAsync(foundEventInCache);
+                                    steamAppDownloadEventsCache[cacheKey] = cachedEvent;
                                 }
-                                steamAppDownloadEventsCache.Add(cacheKey, foundEventInCache);
                             }
-                            steamDepotsCache.Add(steamDepotId.Key.Value, foundInDb);
-                        }
 
-                        foreach (var steamLogLine in parsedLogLinesSteam)
-                        {
-                            var cacheKey = $"{steamLogLine.SteamDepotId}_{steamLogLine.RemoteAddress}";
-                            var cachedEvent = steamAppDownloadEventsCache[cacheKey];
-
-                            if (!(cachedEvent.LastUpdatedAt > steamLogLine.DateTime.AddMinutes(-5)))
+                            if (cachedEvent == null || !(cachedEvent.LastUpdatedAt > steamLogLine.DateTime.AddMinutes(-5)))
                             {
-                                Console.WriteLine($"Adding new event because more then 5 minutes no update: {cacheKey} ({cachedEvent.LastUpdatedAt} => {steamLogLine.DateTime})");
-                                cachedEvent = new DbSteamAppDownloadEvent()
+                                Console.WriteLine($"Adding new event because more then 5 minutes no update: {cacheKey} ({steamLogLine.DateTime})");
+
+                                int.TryParse(steamLogLine.DownloadIdentifier, out var downloadIdentifierInt);
+                                cachedEvent = new DbDownloadEvent()
                                 {
+                                    CacheIdentifier = steamLogLine.CacheIdentifier,
+                                    DownloadIdentifierString = steamLogLine.DownloadIdentifier,
+                                    DownloadIdentifier = downloadIdentifierInt,
                                     CreatedAt = steamLogLine.DateTime,
                                     LastUpdatedAt = steamLogLine.DateTime,
-                                    SteamDepotId = cachedEvent.SteamDepotId,
-                                    ClientIp = cachedEvent.ClientIp
+                                    ClientIp = steamLogLine.RemoteAddress
                                 };
                                 steamAppDownloadEventsCache[cacheKey] = cachedEvent;
-                                await dbContext.SteamAppDownloadEvents.AddAsync(cachedEvent);
+                                await dbContext.DownloadEvents.AddAsync(cachedEvent);
                             }
 
                             cachedEvent.LastUpdatedAt = steamLogLine.DateTime;
