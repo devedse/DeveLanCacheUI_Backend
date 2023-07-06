@@ -1,7 +1,14 @@
 # DeveLanCacheUI_Backend
-A UI for Lan Cache. Currently only supports Steam, but works quite nicely t.b.h.
+A UI for Lan Cache.
 
-![ScreenshotFrontend](Screenshot_Frontend.png)
+Can show Steam Games that were downloaded / cached:
+![Screenshot](Screenshot_Frontend_1.png)
+
+Can show other Download events:
+![Screenshot](Screenshot_Frontend_2.png)
+
+Can show client / service stats:
+![Screenshot](Screenshot_Frontend_3.png)
 
 ## How to run this
 
@@ -59,9 +66,9 @@ https://linux.die.net/man/8/mount.cifs
 |:----:|:--------:|
 | Automated Deployments | 100% |
 | Dockerization | 100% |
-| Implement other protocols besides steam | 0% |
+| Implement other services besides steam | 80% (I don't show games for other services yet) |
 | Auto refresh | 100% |
-| More data things | 0% |
+| More data things | 80% (We have stats now) |
 | Dark Theme + Toggle | 90% (Won't remember on reload) |
 
 ## Build status
