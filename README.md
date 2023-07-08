@@ -41,7 +41,7 @@ services:
 Steps:
 1. Create/mount the relevant directories
 2. Run the docker-compose file
-3. Copy paste the app-depot-output.csv file in the mounted `depotdir`. This will automatically fill the database with all Depot => App mappings
+3. Copy paste the app-depot-output.csv file in the mounted `depotdir`. This will automatically fill the database with all Depot => App mappings (Grab here: https://github.com/devedse/DeveLanCacheUI_SteamDepotFinder_Runner/releases)
 4. Github Sponsor me 5k euro's kthnx
 5. Profit
 
