@@ -12,6 +12,8 @@ Can show client / service stats:
 
 ## How to run this
 
+docker-compose.yml:
+
 ```
 version: '3'
 
@@ -25,6 +27,8 @@ services:
       - LanCacheLogsDirectory=/var/develancacheui/lancachelogs
       - DepotFileDirectory=/var/develancacheui/depotdir
       - ConnectionStrings__DefaultConnection=Data Source=/var/develancacheui/database/develancacheui.db;
+      - TZ=Europe/Amsterdam
+      - LANG=en_GB.UTF-8
     volumes:
       - "/home/pi/dockercomposers/develancacheui/backend/depotdir:/var/develancacheui/depotdir"
       - "/home/pi/dockercomposers/develancacheui/backend/database:/var/develancacheui/database"
@@ -37,6 +41,8 @@ services:
     environment:
       - BACKENDURL=https://develancacheui_api.devedse.duckdns.org
 ```
+
+Update the docker-compose.yml with your own URL's. Changing the TZ and LANG only impact the way the container logs. (E.g. 23/04/2023 instead of 04/23/2023)
 
 Steps:
 1. Create/mount the relevant directories
