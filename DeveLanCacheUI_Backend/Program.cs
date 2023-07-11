@@ -27,8 +27,17 @@ namespace DeveLanCacheUI_Backend
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+
+            //I don't get why but this is not working
+            //builder.Services.AddHttpClient<SteamDepotDownloaderHostedService>(client =>
+            //{
+            //    client.DefaultRequestHeaders.Add("User-Agent", "request");
+            //});
+
+            //builder.Services.AddHttpClient<SteamDepotDownloaderHostedService>();
             builder.Services.AddHostedService<LanCacheLogReaderHostedService>();
             builder.Services.AddHostedService<SteamDepotEnricherHostedService>();
+            builder.Services.AddHostedService<SteamDepotDownloaderHostedService>();
 
             builder.Services.AddSignalR();
             builder.Services.AddResponseCompression(opts =>

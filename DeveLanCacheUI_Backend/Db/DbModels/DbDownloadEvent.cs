@@ -8,7 +8,7 @@ namespace DeveLanCacheUI_Backend.Db.DbModels
         public int Id { get; set; }
 
         //steam/epicgames/wsus/epicgames
-        public string CacheIdentifier { get; set; }
+        public required string CacheIdentifier { get; set; }
 
         public int? DownloadIdentifier { get; set; }
         public string? DownloadIdentifierString { get; set; }
