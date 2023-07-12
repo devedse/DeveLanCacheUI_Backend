@@ -1,6 +1,6 @@
 ﻿using DeveLanCacheUI_Backend.Db;
+using DeveLanCacheUI_Backend.Db.DbModels;
 using Microsoft.EntityFrameworkCore;
-using System.Net.Http;
 using System.Text.Json;
 
 namespace DeveLanCacheUI_Backend.Steam
@@ -62,7 +62,7 @@ namespace DeveLanCacheUI_Backend.Steam
 
         private async Task GoDownload(string depotFileDirectory, (bool NewVersionAvailable, Version? LatestVersion, string? DownloadUrl) shouldDownload)
         {
-            _logger.LogInformation($"Detected that new version '{shouldDownload.NewVersionAvailable}' is available, so downloading: {shouldDownload.DownloadUrl}...");
+            _logger.LogInformation($"Detected that new version '{shouldDownload.NewVersionAvailable}' of Depot File is available, so downloading: {shouldDownload.DownloadUrl}...");
 
             var downloadedCsv = await _httpClient.GetAsync(shouldDownload.DownloadUrl);
             if (!downloadedCsv.IsSuccessStatusCode)
@@ -76,6 +76,26 @@ namespace DeveLanCacheUI_Backend.Steam
             var fileName = $"depot_{shouldDownload.LatestVersion}.csv";
             var filePath = Path.Combine(depotFileDirectory, fileName);
             File.WriteAllBytes(filePath, bytes);
+
+            await using (var scope = Services.CreateAsyncScope())
+            {
+                using var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();
+                var foundSetting = await dbContext.Settings.FirstOrDefaultAsync();
+                if (foundSetting == null || foundSetting.Value == null)
+                {
+                    foundSetting = new DbSetting()
+                    {
+                        Key = DbSetting.SettingKey_DepotVersion,
+                        Value = shouldDownload.LatestVersion?.ToString()
+                    };
+                    dbContext.Settings.Add(foundSetting);
+                }
+                else
+                {
+                    foundSetting.Value = shouldDownload.LatestVersion?.ToString();
+                }
+                await dbContext.SaveChangesAsync();
+            }
         }
 
         private async Task<(bool NewVersionAvailable, Version? LatestVersion, string? DownloadUrl)> NewDepotFileAvailable()
@@ -118,17 +138,20 @@ namespace DeveLanCacheUI_Backend.Steam
                 var foundSetting = await dbContext.Settings.FirstOrDefaultAsync();
                 if (foundSetting == null || foundSetting.Value == null)
                 {
+                    _logger.LogInformation($"Update of Depot File required because CurrentVersion could not be found");
                     return (true, latestVersion, downloadUrl);
                 }
 
                 if (!Version.TryParse(foundSetting.Value, out currentVersion))
                 {
+                    _logger.LogInformation($"Update of Depot File required because CurrentVersion could not be parsed: {foundSetting.Value}");
                     return (true, latestVersion, downloadUrl);
                 }
             }
 
             if (latestVersion > currentVersion)
             {
+                _logger.LogInformation($"Update of Depot File required because LatestVersion ({latestVersion}) > CurrentVersion ({currentVersion})");
                 return (true, latestVersion, downloadUrl);
             }
             return (false, null, null);
