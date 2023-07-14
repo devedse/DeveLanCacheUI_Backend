@@ -38,7 +38,7 @@ namespace DeveLanCacheUI_Backend.Controllers
             IQueryable<DbDownloadEvent> tmpResult = _dbContext.DownloadEvents;
             if (filter != null)
             {
-                tmpResult = tmpResult.Where(t => t.CacheIdentifier == filter);
+                tmpResult = tmpResult.Where(t => t.CacheIdentifier == filter && t.CacheHitBytes != 0 && t.CacheMissBytes != 0);
             }
 
             var result = await tmpResult
