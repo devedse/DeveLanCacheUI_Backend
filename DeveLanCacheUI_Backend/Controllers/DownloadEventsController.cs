@@ -40,7 +40,7 @@ namespace DeveLanCacheUI_Backend.Controllers
             {
                 tmpResult = tmpResult.Where(t => t.CacheIdentifier == filter);
             }
-            tmpResult = tmpResult.Where(t => t.CacheHitBytes != 0 && t.CacheMissBytes != 0);
+            tmpResult = tmpResult.Where(t => t.CacheHitBytes != 0 || t.CacheMissBytes != 0);
 
             var result = await tmpResult
                 .GroupJoin(
