@@ -1,8 +1,10 @@
 
 using DeveLanCacheUI_Backend.Db;
+using DeveLanCacheUI_Backend.DeveHashImageGeneratorStuff;
 using DeveLanCacheUI_Backend.Hubs;
 using DeveLanCacheUI_Backend.LogReading;
 using DeveLanCacheUI_Backend.Steam;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.Rewrite;
 using Microsoft.EntityFrameworkCore;
@@ -23,22 +25,25 @@ namespace DeveLanCacheUI_Backend
                 options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"));
             });
 
-            builder.Services.AddControllers().AddJsonOptions(x =>
+            builder.Services.AddControllers(options =>
+            {
+                options.CacheProfiles.Add("ForeverCache",
+                    new CacheProfile()
+                    {
+                        Duration = 31536000,
+                        Location = ResponseCacheLocation.Any
+                    });
+            }).AddJsonOptions(x =>
                  x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-            //I don't get why but this is not working
-            //builder.Services.AddHttpClient<SteamDepotDownloaderHostedService>(client =>
-            //{
-            //    client.DefaultRequestHeaders.Add("User-Agent", "request");
-            //});
-
-            //builder.Services.AddHttpClient<SteamDepotDownloaderHostedService>();
             builder.Services.AddHostedService<LanCacheLogReaderHostedService>();
             builder.Services.AddHostedService<SteamDepotEnricherHostedService>();
             builder.Services.AddHostedService<SteamDepotDownloaderHostedService>();
+
+            builder.Services.AddSingleton<RoboHashCache>();
 
             builder.Services.AddSignalR();
             builder.Services.AddResponseCompression(opts =>

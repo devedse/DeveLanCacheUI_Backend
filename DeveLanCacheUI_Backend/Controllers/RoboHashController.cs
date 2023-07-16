@@ -1,7 +1,8 @@
 using DeveHashImageGenerator.RoboHash;
+using DeveLanCacheUI_Backend.DeveHashImageGeneratorStuff;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 using SixLabors.ImageSharp;
-using System.Collections.Concurrent;
 
 namespace DeveLanCacheUI_Backend.Controllers
 {
@@ -10,57 +11,52 @@ namespace DeveLanCacheUI_Backend.Controllers
     public class RoboHashController : ControllerBase
     {
         private readonly ILogger<RoboHashController> _logger;
-        private static ConcurrentDictionary<string, byte[]> _imagesCache = new ConcurrentDictionary<string, byte[]>();
+        private readonly RoboHashCache _roboHashCache;
 
-        public RoboHashController(ILogger<RoboHashController> logger)
+        public RoboHashController(ILogger<RoboHashController> logger, RoboHashCache roboHashCache)
         {
             _logger = logger;
+            _roboHashCache = roboHashCache;
         }
 
         [HttpGet("{text}")]
+        [ResponseCache(CacheProfileName = "ForeverCache")]
         public IActionResult GetRoboHash(string text, string? roboSet = null, string? color = null, string? format = "png", string? bgSet = null, int sizeX = 300, int sizeY = 300)
         {
             byte[] data;
 
             var key = $"{text}_{roboSet}_{color}_{format}_{bgSet}_{sizeX}_{sizeY}";
-            if (_imagesCache.TryGetValue(key, out data))
+
+            data = _roboHashCache.Cache.GetOrCreate(key, cacheEntry =>
             {
-                return new FileContentResult(data, GetMimeType(format));
-            }
-            else
-            {
-                try
+                cacheEntry.SlidingExpiration = TimeSpan.FromDays(1); // Set expiration time as per your requirements
+
+                var roboHashGenerator = new RoboHashGenerator();
+                var image = roboHashGenerator.Assemble(text, roboSet, color, format, bgSet, sizeX, sizeY);
+
+                var outputStream = new MemoryStream();
+                switch (format?.ToLower())
                 {
-                    var roboHashGenerator = new RoboHashGenerator();
-                    var image = roboHashGenerator.Assemble(text, roboSet, color, format, bgSet, sizeX, sizeY);
-
-                    var outputStream = new MemoryStream();
-                    switch (format?.ToLower())
-                    {
-                        case "jpg":
-                            image.SaveAsJpeg(outputStream);
-                            break;
-                        case "bmp":
-                            image.SaveAsBmp(outputStream);
-                            break;
-                        case "png":
-                        default:
-                            image.SaveAsPng(outputStream);
-                            break;
-                    }
-
-                    data = outputStream.ToArray();
-
-                    _imagesCache.TryAdd(key, data); // Adding to cache
-
-                    return new FileContentResult(data, GetMimeType(format));
+                    case "jpg":
+                        image.SaveAsJpeg(outputStream);
+                        break;
+                    case "bmp":
+                        image.SaveAsBmp(outputStream);
+                        break;
+                    case "png":
+                    default:
+                        image.SaveAsPng(outputStream);
+                        break;
                 }
-                catch (Exception e)
-                {
-                    _logger.LogError(e, "An error occurred while generating RoboHash image");
-                    return BadRequest("Failed to generate image");
-                }
-            }
+
+                var imageData = outputStream.ToArray();
+
+                cacheEntry.SetSize(imageData.Length);
+
+                return imageData;
+            })!;
+
+            return new FileContentResult(data, GetMimeType(format));
         }
 
         private string GetMimeType(string? format)
