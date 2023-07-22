@@ -1,7 +1,8 @@
-﻿using DeveLanCacheUI_Backend.Status;
+﻿using DeveLanCacheUI_Backend.Db;
+using DeveLanCacheUI_Backend.Db.DbModels;
+using DeveLanCacheUI_Backend.Status;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace DeveLanCacheUI_Backend.Controllers
 {
@@ -10,19 +11,24 @@ namespace DeveLanCacheUI_Backend.Controllers
     public class StatusController : ControllerBase
     {
         private readonly ILogger<StatusController> _logger;
+        private readonly DeveLanCacheUIDbContext _dbContext;
 
-        public StatusController(ILogger<StatusController> logger)
+        public StatusController(ILogger<StatusController> logger, DeveLanCacheUIDbContext dbContext)
         {
             _logger = logger;
+            _dbContext = dbContext;
         }
 
         [HttpGet]
-        public Task<StatusModel> GetAsync()
+        public async Task<StatusModel> GetAsync()
         {
             _logger.Log(LogLevel.Information, "### Status Controller Get() called");
 
             var statusModel = StatusObtainer.GetStatus();
-            return Task.FromResult(statusModel);
+
+            var depotVersionSetting = await _dbContext.Settings.FirstOrDefaultAsync(t => t.Key == DbSetting.SettingKey_DepotVersion);
+            statusModel.DepotVersion = depotVersionSetting?.Value;
+            return statusModel;
         }
     }
 }

@@ -8,6 +8,7 @@ namespace DeveLanCacheUI_Backend.Db
     {
         public DbSet<DbSteamDepot> SteamDepots => Set<DbSteamDepot>();
         public DbSet<DbDownloadEvent> DownloadEvents => Set<DbDownloadEvent>();
+        public DbSet<DbSetting> Settings => Set<DbSetting>();
 
         public DeveLanCacheUIDbContext(DbContextOptions options) : base(options)
         {

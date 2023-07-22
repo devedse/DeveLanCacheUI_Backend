@@ -1,9 +1,12 @@
 
 using DeveLanCacheUI_Backend.Db;
+using DeveLanCacheUI_Backend.DeveHashImageGeneratorStuff;
 using DeveLanCacheUI_Backend.Hubs;
 using DeveLanCacheUI_Backend.LogReading;
 using DeveLanCacheUI_Backend.Steam;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.AspNetCore.Rewrite;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 
@@ -22,13 +25,25 @@ namespace DeveLanCacheUI_Backend
                 options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"));
             });
 
-            builder.Services.AddControllers().AddJsonOptions(x =>
+            builder.Services.AddControllers(options =>
+            {
+                options.CacheProfiles.Add("ForeverCache",
+                    new CacheProfile()
+                    {
+                        Duration = 31536000,
+                        Location = ResponseCacheLocation.Any
+                    });
+            }).AddJsonOptions(x =>
                  x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+
             builder.Services.AddHostedService<LanCacheLogReaderHostedService>();
             builder.Services.AddHostedService<SteamDepotEnricherHostedService>();
+            builder.Services.AddHostedService<SteamDepotDownloaderHostedService>();
+
+            builder.Services.AddSingleton<RoboHashCache>();
 
             builder.Services.AddSignalR();
             builder.Services.AddResponseCompression(opts =>
@@ -61,13 +76,14 @@ namespace DeveLanCacheUI_Backend
                 Console.WriteLine("DB migration completed");
             }
 
+            //Redirect to /swagger
+            var option = new RewriteOptions();
+            option.AddRedirect("^$", "swagger");
+            app.UseRewriter(option);
 
             // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
+            app.UseSwagger();
+            app.UseSwaggerUI();
 
             app.UseHttpsRedirection();
 

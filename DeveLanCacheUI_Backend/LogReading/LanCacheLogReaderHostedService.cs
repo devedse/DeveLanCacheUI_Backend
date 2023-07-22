@@ -201,6 +201,8 @@ namespace DeveLanCacheUI_Backend.LogReading
         {
             int skipCounter = 0;
 
+            int dontLogForSpecificCounter = 0;
+
             var nextbatch = new List<LanCacheLogEntryRaw>();
             foreach (var logEntry in collection)
             {
@@ -210,11 +212,16 @@ namespace DeveLanCacheUI_Backend.LogReading
                     {
                         yield return nextbatch;
                         nextbatch = new List<LanCacheLogEntryRaw>();
+                        dontLogForSpecificCounter = 0;
                     }
                     else
                     {
-                        var logFilePath = _configuration.GetValue<string>("LanCacheLogsDirectory")!;
-                        Console.WriteLine($"{DateTime.Now} No new log lines, waiting...");
+                        //Only log once in 30 times
+                        if (dontLogForSpecificCounter % 30 == 0)
+                        {
+                            Console.WriteLine($"{DateTime.Now} No new log lines, waiting...");
+                        }
+                        dontLogForSpecificCounter++;
                         Thread.Sleep(1000);
                         continue;
                     }
