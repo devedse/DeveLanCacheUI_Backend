@@ -10,8 +10,6 @@ namespace DeveLanCacheUI_Backend.Tests.ProtoTest
         {
             var path = Path.Combine("ProtoTest", "10336669592858206477");
 
-            var bytes = File.ReadAllBytes(path);
-            string aaaaBase64 = Convert.ToBase64String(bytes);
 
             SuperLoader.GoLoad(path);
 

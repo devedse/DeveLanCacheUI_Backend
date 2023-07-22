@@ -9,10 +9,9 @@ namespace DeveLanCacheUI_Backend.ProtoTest
         public static void GoLoad(string filePath)
         {
             var allBytes = File.ReadAllBytes(filePath);
+            var bytesDecompressed = ZipUtil.Decompress(allBytes);
             using var openBytes = File.OpenRead(filePath);
-            //var retval = DepotManifest.Deserialize(allBytes);
-            //var retval = new Steam3Manifest(allBytes);
-            var retval = Serializer.Deserialize<ContentManifestPayload>(openBytes);
+            var retval = DepotManifest.Deserialize(bytesDecompressed);
 
             Console.WriteLine(retval);
         }
