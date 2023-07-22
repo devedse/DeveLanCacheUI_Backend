@@ -33,12 +33,13 @@ namespace DeveLanCacheUI_Backend.SteamProto
 
             var dbSteamManifest = new DbSteamManifest()
             {
-                DepotId = depotManifest.DepotID,
+                DepotId = (int)depotManifest.DepotID,
                 CreationTime = depotManifest.CreationTime,
                 TotalCompressedSize = depotManifest.TotalCompressedSize,
                 TotalUncompressedSize = depotManifest.TotalUncompressedSize,
                 CalculatedCompressedSize = totCompressed,
                 CalculatedUncompressedSize = totUncompressed,
+                ManifestBytesSize = (ulong)manifestBytes.LongLength,
                 OriginalProtobufData = storeBytesInDbObject ? manifestBytes : null
             };
 

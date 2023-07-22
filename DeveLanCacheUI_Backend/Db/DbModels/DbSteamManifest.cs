@@ -9,7 +9,7 @@ namespace DeveLanCacheUI_Backend.Db.DbModels
     [PrimaryKey(nameof(DepotId), nameof(CreationTime))]
     public class DbSteamManifest
     {
-        public required uint DepotId { get; set; }
+        public required int DepotId { get; set; }
         public required DateTime CreationTime { get; set; }
 
         public required ulong TotalCompressedSize { get; set; }
@@ -23,5 +23,7 @@ namespace DeveLanCacheUI_Backend.Db.DbModels
         [NotMapped]
         //public string ProtobufDataAsJson => OriginalProtobufData != null ? SteamManifestHelper.ManifestBytesToJson(OriginalProtobufData, false) : "";
         public JsonDocument? ProtobufDataAsJson => OriginalProtobufData != null ? SteamManifestHelper.ManifestBytesToJsonValue(OriginalProtobufData) : null;
+
+        public ulong ManifestBytesSize { get; internal set; }
     }
 }

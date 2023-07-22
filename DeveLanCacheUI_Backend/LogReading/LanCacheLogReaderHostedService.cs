@@ -151,7 +151,7 @@ namespace DeveLanCacheUI_Backend.LogReading
                         {
                             if (lanCacheLogLine.CacheIdentifier == "steam" && lanCacheLogLine.Request.Contains("/manifest/") && DateTime.Now < lanCacheLogLine.DateTime.AddMinutes(5))
                             {
-                                Console.WriteLine($"Found manifest for Depot: {lanCacheLogLine.CacheIdentifier}");
+                                Console.WriteLine($"Found manifest for Depot: {lanCacheLogLine.DownloadIdentifier}");
                                 var ttt = lanCacheLogLine;
                                 TryToDownloadManifest(ttt);
                             }
@@ -240,26 +240,26 @@ namespace DeveLanCacheUI_Backend.LogReading
                         var manifestResponse = await httpClient.GetAsync(url);
                         if (!manifestResponse.IsSuccessStatusCode)
                         {
-                            Console.WriteLine($"Waring: Tried to obtain manifest for: {lanCacheLogEntryRaw.CacheIdentifier} but status code was: {manifestResponse.StatusCode}");
+                            Console.WriteLine($"Waring: Tried to obtain manifest for: {lanCacheLogEntryRaw.DownloadIdentifier} but status code was: {manifestResponse.StatusCode}");
                         }
                         var manifestBytes = await manifestResponse.Content.ReadAsByteArrayAsync();
                         var dbManifest = SteamManifestHelper.ManifestBytesToDbSteamManifest(manifestBytes, StoreSteamDbProtoManifestBytesInDb);
 
                         if (dbManifest == null)
                         {
-                            Console.WriteLine($"Waring: Could not get manifest for depot: {lanCacheLogEntryRaw.CacheIdentifier}");
+                            Console.WriteLine($"Waring: Could not get manifest for depot: {lanCacheLogEntryRaw.DownloadIdentifier}");
                         }
 
                         var dbValue = dbContext.SteamManifests.FirstOrDefault(t => t.DepotId == dbManifest.DepotId && t.CreationTime == dbManifest.CreationTime);
                         if (dbValue != null)
                         {
                             dbContext.Entry(dbValue).CurrentValues.SetValues(dbManifest);
-                            Console.WriteLine($"Info: Updated manifest for {lanCacheLogEntryRaw.CacheIdentifier}");
+                            Console.WriteLine($"Info: Updated manifest for {lanCacheLogEntryRaw.DownloadIdentifier}");
                         }
                         else
                         {
                             await dbContext.SteamManifests.AddAsync(dbManifest);
-                            Console.WriteLine($"Info: Added manifest for {lanCacheLogEntryRaw.CacheIdentifier}");
+                            Console.WriteLine($"Info: Added manifest for {lanCacheLogEntryRaw.DownloadIdentifier}");
                         }
                         await dbContext.SaveChangesAsync();
                     }
