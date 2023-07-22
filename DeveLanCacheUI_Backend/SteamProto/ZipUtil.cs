@@ -10,7 +10,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Text;
 
-namespace DeveLanCacheUI_Backend.ProtoTest
+namespace DeveLanCacheUI_Backend.SteamProto
 {
     static class ZipUtil
     {

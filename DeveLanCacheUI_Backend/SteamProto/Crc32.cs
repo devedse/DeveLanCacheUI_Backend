@@ -5,7 +5,7 @@
 using System;
 using System.Security.Cryptography;
 
-namespace DeveLanCacheUI_Backend.ProtoTest
+namespace DeveLanCacheUI_Backend.SteamProto
 {
     class Crc32 : HashAlgorithm
     {

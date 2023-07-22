@@ -1,4 +1,4 @@
-﻿using DeveLanCacheUI_Backend.ProtoTest;
+﻿using DeveLanCacheUI_Backend.SteamProto;
 
 namespace DeveLanCacheUI_Backend.Tests.ProtoTest
 {
@@ -9,10 +9,11 @@ namespace DeveLanCacheUI_Backend.Tests.ProtoTest
         public void GoTest()
         {
             var path = Path.Combine("ProtoTest", "10336669592858206477");
+            var allBytes = File.ReadAllBytes(path);
 
+            var dbSteamManifest = SteamManifestHelper.ManifestBytesToDbSteamManifest(allBytes);
 
-            SuperLoader.GoLoad(path);
-
+            Assert.IsNotNull(dbSteamManifest);
         }
     }
 }
