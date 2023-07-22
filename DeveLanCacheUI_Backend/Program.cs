@@ -43,6 +43,8 @@ namespace DeveLanCacheUI_Backend
             builder.Services.AddHostedService<SteamDepotEnricherHostedService>();
             builder.Services.AddHostedService<SteamDepotDownloaderHostedService>();
 
+            builder.Services.AddHttpClient();
+
             builder.Services.AddSingleton<RoboHashCache>();
 
             builder.Services.AddSignalR();

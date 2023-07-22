@@ -1,14 +1,12 @@
 ﻿using DeveLanCacheUI_Backend.Db.DbModels;
-using ProtoBuf;
 using SteamKit2;
-using SteamKit2.Internal;
 using System.Text.Json;
 
 namespace DeveLanCacheUI_Backend.SteamProto
 {
     public static class SteamManifestHelper
     {
-        public static DbSteamManifest? ManifestBytesToDbSteamManifest(byte[] manifestBytes)
+        public static DbSteamManifest? ManifestBytesToDbSteamManifest(byte[] manifestBytes, bool storeBytesInDbObject)
         {
             var bytesDecompressed = ZipUtil.Decompress(manifestBytes);
             var depotManifest = DepotManifest.Deserialize(bytesDecompressed);
@@ -40,10 +38,26 @@ namespace DeveLanCacheUI_Backend.SteamProto
                 TotalCompressedSize = depotManifest.TotalCompressedSize,
                 TotalUncompressedSize = depotManifest.TotalUncompressedSize,
                 CalculatedCompressedSize = totCompressed,
-                CalculatedUncompressedSize = totUncompressed
+                CalculatedUncompressedSize = totUncompressed,
+                OriginalProtobufData = storeBytesInDbObject ? manifestBytes : null
             };
 
             return dbSteamManifest;
+        }
+
+        public static string ManifestBytesToJson(byte[] manifestBytes, bool indented)
+        {
+            var bytesDecompressed = ZipUtil.Decompress(manifestBytes);
+            var depotManifest = DepotManifest.Deserialize(bytesDecompressed);
+            var json = JsonSerializer.Serialize(depotManifest, new JsonSerializerOptions() { WriteIndented = indented });
+            return json;
+        }
+
+        public static JsonDocument ManifestBytesToJsonValue(byte[] manifestBytes)
+        {
+            var json = ManifestBytesToJson(manifestBytes, false);
+            var document = JsonDocument.Parse(json);
+            return document;
         }
 
         public static string DecodeBase64(this byte[] data)

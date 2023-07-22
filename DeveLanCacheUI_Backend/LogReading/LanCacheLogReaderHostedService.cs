@@ -3,6 +3,7 @@ using DeveLanCacheUI_Backend.Db.DbModels;
 using DeveLanCacheUI_Backend.Hubs;
 using DeveLanCacheUI_Backend.LogReading.Models;
 using DeveLanCacheUI_Backend.Steam;
+using DeveLanCacheUI_Backend.SteamProto;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Polly;
@@ -16,16 +17,21 @@ namespace DeveLanCacheUI_Backend.LogReading
 
         private readonly IConfiguration _configuration;
         private readonly IHubContext<LanCacheHub> _lanCacheHubContext;
+        private readonly IHttpClientFactory _httpClientFactoryForManifestDownloads;
         private readonly ILogger<LanCacheLogReaderHostedService> _logger;
+
+        private const bool StoreSteamDbProtoManifestBytesInDb = true;
 
         public LanCacheLogReaderHostedService(IServiceProvider services,
             IConfiguration configuration,
             IHubContext<LanCacheHub> lanCacheHubContext,
+            IHttpClientFactory httpClientFactory,
             ILogger<LanCacheLogReaderHostedService> logger)
         {
             Services = services;
             _configuration = configuration;
             _lanCacheHubContext = lanCacheHubContext;
+            _httpClientFactoryForManifestDownloads = httpClientFactory;
             _logger = logger;
         }
 
@@ -141,19 +147,26 @@ namespace DeveLanCacheUI_Backend.LogReading
                         //    }
                         //}
 
-                        foreach (var steamLogLine in filteredLogLines)
+                        foreach (var lanCacheLogLine in filteredLogLines)
                         {
-                            var cacheKey = $"{steamLogLine.CacheIdentifier}_||_{steamLogLine.DownloadIdentifier}_||_{steamLogLine.RemoteAddress}";
+                            if (lanCacheLogLine.CacheIdentifier == "steam" && lanCacheLogLine.Request.Contains("/manifest/") && DateTime.Now < lanCacheLogLine.DateTime.AddMinutes(5))
+                            {
+                                Console.WriteLine($"Found manifest for Depot: {lanCacheLogLine.CacheIdentifier}");
+                                var ttt = lanCacheLogLine;
+                                TryToDownloadManifest(ttt);
+                            }
+
+                            var cacheKey = $"{lanCacheLogLine.CacheIdentifier}_||_{lanCacheLogLine.DownloadIdentifier}_||_{lanCacheLogLine.RemoteAddress}";
                             steamAppDownloadEventsCache.TryGetValue(cacheKey, out var cachedEvent);
 
                             if (cachedEvent == null)
                             {
                                 cachedEvent = await dbContext.DownloadEvents
                                    .FirstOrDefaultAsync(t =>
-                                       t.CacheIdentifier == steamLogLine.CacheIdentifier &&
-                                       t.DownloadIdentifierString == steamLogLine.DownloadIdentifier &&
-                                       t.ClientIp == steamLogLine.RemoteAddress &&
-                                       t.LastUpdatedAt > steamLogLine.DateTime.AddMinutes(-5)
+                                       t.CacheIdentifier == lanCacheLogLine.CacheIdentifier &&
+                                       t.DownloadIdentifierString == lanCacheLogLine.DownloadIdentifier &&
+                                       t.ClientIp == lanCacheLogLine.RemoteAddress &&
+                                       t.LastUpdatedAt > lanCacheLogLine.DateTime.AddMinutes(-5)
                                        );
                                 if (cachedEvent != null)
                                 {
@@ -161,32 +174,32 @@ namespace DeveLanCacheUI_Backend.LogReading
                                 }
                             }
 
-                            if (cachedEvent == null || !(cachedEvent.LastUpdatedAt > steamLogLine.DateTime.AddMinutes(-5)))
+                            if (cachedEvent == null || !(cachedEvent.LastUpdatedAt > lanCacheLogLine.DateTime.AddMinutes(-5)))
                             {
-                                Console.WriteLine($"Adding new event because more then 5 minutes no update: {cacheKey} ({steamLogLine.DateTime})");
+                                Console.WriteLine($"Adding new event because more then 5 minutes no update: {cacheKey} ({lanCacheLogLine.DateTime})");
 
-                                int.TryParse(steamLogLine.DownloadIdentifier, out var downloadIdentifierInt);
+                                int.TryParse(lanCacheLogLine.DownloadIdentifier, out var downloadIdentifierInt);
                                 cachedEvent = new DbDownloadEvent()
                                 {
-                                    CacheIdentifier = steamLogLine.CacheIdentifier,
-                                    DownloadIdentifierString = steamLogLine.DownloadIdentifier,
+                                    CacheIdentifier = lanCacheLogLine.CacheIdentifier,
+                                    DownloadIdentifierString = lanCacheLogLine.DownloadIdentifier,
                                     DownloadIdentifier = downloadIdentifierInt,
-                                    CreatedAt = steamLogLine.DateTime,
-                                    LastUpdatedAt = steamLogLine.DateTime,
-                                    ClientIp = steamLogLine.RemoteAddress
+                                    CreatedAt = lanCacheLogLine.DateTime,
+                                    LastUpdatedAt = lanCacheLogLine.DateTime,
+                                    ClientIp = lanCacheLogLine.RemoteAddress
                                 };
                                 steamAppDownloadEventsCache[cacheKey] = cachedEvent;
                                 await dbContext.DownloadEvents.AddAsync(cachedEvent);
                             }
 
-                            cachedEvent.LastUpdatedAt = steamLogLine.DateTime;
-                            if (steamLogLine.UpstreamCacheStatus == "HIT")
+                            cachedEvent.LastUpdatedAt = lanCacheLogLine.DateTime;
+                            if (lanCacheLogLine.UpstreamCacheStatus == "HIT")
                             {
-                                cachedEvent.CacheHitBytes += steamLogLine.BodyBytesSentLong;
+                                cachedEvent.CacheHitBytes += lanCacheLogLine.BodyBytesSentLong;
                             }
                             else
                             {
-                                cachedEvent.CacheMissBytes += steamLogLine.BodyBytesSentLong;
+                                cachedEvent.CacheMissBytes += lanCacheLogLine.BodyBytesSentLong;
                             }
                         }
 
@@ -195,6 +208,63 @@ namespace DeveLanCacheUI_Backend.LogReading
                     });
                 }
             }
+        }
+
+        private void TryToDownloadManifest(LanCacheLogEntryRaw lanCacheLogEntryRaw)
+        {
+            _ = Task.Run(async () =>
+            {
+                var fallbackPolicy = Policy
+                    .Handle<Exception>()
+                    .FallbackAsync(async (ct) =>
+                    {
+                        Console.WriteLine($"Manifest saving: All retries failed, skipping...");
+                    });
+
+                var retryPolicy = Policy
+                   .Handle<Exception>()
+                   .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                   (exception, timeSpan, context) =>
+                   {
+                       Console.WriteLine($"Manifest saving: An error occurred while trying to save changes: {exception.Message}");
+                   });
+
+                await fallbackPolicy.WrapAsync(retryPolicy).ExecuteAsync(async () =>
+                {
+                    await using (var scope = Services.CreateAsyncScope())
+                    {
+                        using var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();
+                        using var httpClient = _httpClientFactoryForManifestDownloads.CreateClient();
+                        var theManifestUrlPart = lanCacheLogEntryRaw.Request.Split(' ', StringSplitOptions.RemoveEmptyEntries)[1];
+                        var url = $"http://{lanCacheLogEntryRaw.Host}{theManifestUrlPart}";
+                        var manifestResponse = await httpClient.GetAsync(url);
+                        if (!manifestResponse.IsSuccessStatusCode)
+                        {
+                            Console.WriteLine($"Waring: Tried to obtain manifest for: {lanCacheLogEntryRaw.CacheIdentifier} but status code was: {manifestResponse.StatusCode}");
+                        }
+                        var manifestBytes = await manifestResponse.Content.ReadAsByteArrayAsync();
+                        var dbManifest = SteamManifestHelper.ManifestBytesToDbSteamManifest(manifestBytes, StoreSteamDbProtoManifestBytesInDb);
+
+                        if (dbManifest == null)
+                        {
+                            Console.WriteLine($"Waring: Could not get manifest for depot: {lanCacheLogEntryRaw.CacheIdentifier}");
+                        }
+
+                        var dbValue = dbContext.SteamManifests.FirstOrDefault(t => t.DepotId == dbManifest.DepotId && t.CreationTime == dbManifest.CreationTime);
+                        if (dbValue != null)
+                        {
+                            dbContext.Entry(dbValue).CurrentValues.SetValues(dbManifest);
+                            Console.WriteLine($"Info: Updated manifest for {lanCacheLogEntryRaw.CacheIdentifier}");
+                        }
+                        else
+                        {
+                            await dbContext.SteamManifests.AddAsync(dbManifest);
+                            Console.WriteLine($"Info: Added manifest for {lanCacheLogEntryRaw.CacheIdentifier}");
+                        }
+                        await dbContext.SaveChangesAsync();
+                    }
+                });
+            });
         }
 
         public IEnumerable<List<LanCacheLogEntryRaw>> Batch2(IEnumerable<LanCacheLogEntryRaw?> collection, int batchSize, DateTime skipOlderThen)
