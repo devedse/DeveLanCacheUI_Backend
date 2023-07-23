@@ -16,29 +16,12 @@ namespace DeveLanCacheUI_Backend.SteamProto
                 return null;
             }
 
-            uint totUncompressed = 0;
-            uint totCompressed = 0;
-            ulong totSize = 0;
-
-            foreach (var file in depotManifest?.Files ?? Enumerable.Empty<DepotManifest.FileData>())
-            {
-                foreach (var chunk in file.Chunks)
-                {
-                    var res = chunk.ChunkID?.DecodeBase64();
-                    totUncompressed += chunk.UncompressedLength;
-                    totCompressed += chunk.CompressedLength;
-                }
-                totSize += file.TotalSize;
-            }
-
             var dbSteamManifest = new DbSteamManifest()
             {
                 DepotId = (int)depotManifest.DepotID,
                 CreationTime = depotManifest.CreationTime,
                 TotalCompressedSize = depotManifest.TotalCompressedSize,
                 TotalUncompressedSize = depotManifest.TotalUncompressedSize,
-                CalculatedCompressedSize = totCompressed,
-                CalculatedUncompressedSize = totUncompressed,
                 ManifestBytesSize = (ulong)manifestBytes.LongLength,
                 OriginalProtobufData = storeBytesInDbObject ? manifestBytes : null
             };

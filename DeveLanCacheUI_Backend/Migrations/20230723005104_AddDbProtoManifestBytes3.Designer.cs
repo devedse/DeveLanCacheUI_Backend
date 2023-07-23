@@ -3,6 +3,7 @@ using System;
 using DeveLanCacheUI_Backend.Db;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DeveLanCacheUI_Backend.Migrations
 {
     [DbContext(typeof(DeveLanCacheUIDbContext))]
-    partial class DeveLanCacheUIDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230723005104_AddDbProtoManifestBytes3")]
+    partial class AddDbProtoManifestBytes3
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "7.0.9");

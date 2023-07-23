@@ -14,8 +14,6 @@ namespace DeveLanCacheUI_Backend.Db.DbModels
 
         public required ulong TotalCompressedSize { get; set; }
         public required ulong TotalUncompressedSize { get; set; }
-        public required ulong CalculatedCompressedSize { get; set; }
-        public required ulong CalculatedUncompressedSize { get; set; }
 
         [JsonIgnore]
         public byte[]? OriginalProtobufData { get; set; }
