@@ -240,7 +240,7 @@ namespace DeveLanCacheUI_Backend.LogReading
                         var manifestResponse = await httpClient.GetAsync(url);
                         if (!manifestResponse.IsSuccessStatusCode)
                         {
-                            Console.WriteLine($"Waring: Tried to obtain manifest for: {lanCacheLogEntryRaw.DownloadIdentifier} but status code was: {manifestResponse.StatusCode}");
+                            Console.WriteLine($"Warning: Tried to obtain manifest for: {lanCacheLogEntryRaw.DownloadIdentifier} but status code was: {manifestResponse.StatusCode}");
                         }
                         var manifestBytes = await manifestResponse.Content.ReadAsByteArrayAsync();
                         var dbManifest = SteamManifestHelper.ManifestBytesToDbSteamManifest(manifestBytes, StoreSteamDbProtoManifestBytesInDb);

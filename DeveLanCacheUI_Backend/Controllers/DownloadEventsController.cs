@@ -45,8 +45,10 @@ namespace DeveLanCacheUI_Backend.Controllers
             var query = from downloadEvent in tmpResult
                         join steamDepot in _dbContext.SteamDepots on downloadEvent.DownloadIdentifier equals steamDepot.Id into steamDepotJoin
                         from steamDepot in steamDepotJoin.DefaultIfEmpty()
-                        join steamManifest in _dbContext.SteamManifests on downloadEvent.DownloadIdentifier equals steamManifest.DepotId into steamManifestJoin
-                        from steamManifest in steamManifestJoin.DefaultIfEmpty()
+                        let steamManifest = (from sm in _dbContext.SteamManifests
+                                             where sm.DepotId == downloadEvent.DownloadIdentifier
+                                             orderby sm.CreationTime descending
+                                             select sm).FirstOrDefault()
                         orderby downloadEvent.LastUpdatedAt descending
                         select new
                         {
@@ -62,7 +64,6 @@ namespace DeveLanCacheUI_Backend.Controllers
 
             var mappedResult = result.Select(item =>
             {
-                var steamManifest = item.steamManifest != null && item.steamManifest.CreationTime == result.Where(t => t.steamManifest != null).Max(t => t.steamManifest.CreationTime) ? item.steamManifest : null;
                 var downloadEvent = new DownloadEvent
                 {
                     Id = item.downloadEvent.Id,
@@ -74,7 +75,7 @@ namespace DeveLanCacheUI_Backend.Controllers
                     LastUpdatedAt = item.downloadEvent.LastUpdatedAt,
                     CacheHitBytes = item.downloadEvent.CacheHitBytes,
                     CacheMissBytes = item.downloadEvent.CacheMissBytes,
-                    TotalBytes = (steamManifest?.TotalCompressedSize ?? 0) + (steamManifest?.ManifestBytesSize ?? 0),
+                    TotalBytes = (item.steamManifest?.TotalCompressedSize ?? 0) + (item.steamManifest?.ManifestBytesSize ?? 0),
                     SteamDepot = item.steamDepot == null
                         ? null
                         : new SteamDepot
