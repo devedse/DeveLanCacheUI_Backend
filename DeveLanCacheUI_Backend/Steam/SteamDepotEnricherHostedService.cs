@@ -32,12 +32,13 @@ namespace DeveLanCacheUI_Backend.Steam
 
         private async Task GoRun(CancellationToken stoppingToken)
         {
-            var depotFileDirectory = _configuration.GetValue<string>("DepotFileDirectory")!;
-
-            if (string.IsNullOrWhiteSpace(depotFileDirectory))
+            var deveLanCacheUIDataDirectory = _configuration.GetValue<string>("DeveLanCacheUIDataDirectory")!;
+            if (string.IsNullOrWhiteSpace(deveLanCacheUIDataDirectory))
             {
-                depotFileDirectory = Directory.GetCurrentDirectory();
+                deveLanCacheUIDataDirectory = Directory.GetCurrentDirectory();
             }
+
+            var depotFileDirectory = Path.Combine(deveLanCacheUIDataDirectory, "depotdir");
 
             _logger.LogInformation($"Watching directory: '{depotFileDirectory}' for any .CSV files to update our Depot database...");
 

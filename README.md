@@ -1,6 +1,14 @@
 # DeveLanCacheUI_Backend
 A UI for Lan Cache.
 
+** Important Upgrade Guide**
+
+As of version 1.0.57 you need to migrate to a new Docker-Compose.yml. Here's how:
+
+![Screenshot](DockerComposeMigrationGuide.png)
+
+## Screenshots
+
 Can show Steam Games that were downloaded / cached:
 ![Screenshot](Screenshot_Frontend_1.png)
 
