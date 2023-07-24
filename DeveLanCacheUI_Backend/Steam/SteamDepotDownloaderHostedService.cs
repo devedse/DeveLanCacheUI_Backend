@@ -35,7 +35,8 @@ namespace DeveLanCacheUI_Backend.Steam
 
         private async Task GoRun(CancellationToken stoppingToken)
         {
-            var depotFileDirectory = _configuration.GetValue<string>("DepotFileDirectory")!;
+            var deveLanCacheUIDataDirectory = _configuration.GetValue<string>("DeveLanCacheUIDataDirectory")!;
+            var depotFileDirectory = Path.Combine(deveLanCacheUIDataDirectory, "depotdir");
 
             if (string.IsNullOrWhiteSpace(depotFileDirectory))
             {

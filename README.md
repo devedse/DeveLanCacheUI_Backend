@@ -25,13 +25,12 @@ services:
       - '7301:80'
     environment:
       - LanCacheLogsDirectory=/var/develancacheui/lancachelogs
-      - DepotFileDirectory=/var/develancacheui/depotdir
-      - ConnectionStrings__DefaultConnection=Data Source=/var/develancacheui/database/develancacheui.db;
+      - DeveLanCacheUIDataDirectory=/var/develancacheuidata
+      - ConnectionStrings__DefaultConnection=Data Source={DeveLanCacheUIDataDirectory}/database/develancacheui.db;
       - TZ=Europe/Amsterdam
       - LANG=en_GB.UTF-8
     volumes:
-      - "/home/pi/dockercomposers/develancacheui/backend/depotdir:/var/develancacheui/depotdir"
-      - "/home/pi/dockercomposers/develancacheui/backend/database:/var/develancacheui/database"
+      - "/home/pi/dockercomposers/develancacheui/data:/var/develancacheuidata"
       - "/mnt/mynas/DockerComposers/lancache/logs:/var/develancacheui/lancachelogs:ro"
   develancacheui_frontend:
     image: devedse/develancacheui_frontend:latest
