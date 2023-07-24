@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Polly;
 using SteamKit2;
 using System.Text.Json;
+using System.Threading;
 
 namespace DeveLanCacheUI_Backend.SteamProto
 {
@@ -19,7 +20,7 @@ namespace DeveLanCacheUI_Backend.SteamProto
         private readonly ILogger<SteamManifestService> _logger;
         private readonly string _manifestDirectory;
 
-        private static object _lockject = new object();
+        private static SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(1, 1);
 
         public SteamManifestService(IConfiguration configuration, IServiceProvider services, IHttpClientFactory httpClientFactory, ILogger<SteamManifestService> logger)
         {
@@ -34,6 +35,8 @@ namespace DeveLanCacheUI_Backend.SteamProto
 
         public void TryToDownloadManifest(LanCacheLogEntryRaw lanCacheLogEntryRaw)
         {
+            //This method could use some TPL Dataflow, I now use locking which should be okayish
+
             if (!lanCacheLogEntryRaw.Request.Contains("/manifest/") || lanCacheLogEntryRaw.DownloadIdentifier == null)
             {
                 _logger.LogError($"Code bug: Trying to download manifest that isn't actually a manifest: {lanCacheLogEntryRaw.OriginalLogLine}");
@@ -59,72 +62,80 @@ namespace DeveLanCacheUI_Backend.SteamProto
 
                 await fallbackPolicy.WrapAsync(retryPolicy).ExecuteAsync(async () =>
                 {
-                    await using (var scope = _services.CreateAsyncScope())
+                    try
                     {
-                        var theManifestUrlPart = lanCacheLogEntryRaw.Request.Split(' ', StringSplitOptions.RemoveEmptyEntries)[1];
-
-                        var everythingAfterManifest = theManifestUrlPart.Split("/manifest/", StringSplitOptions.RemoveEmptyEntries).Last();
-                        var manifestId = everythingAfterManifest.Split("/", StringSplitOptions.RemoveEmptyEntries).First();
-
-                        //Replace invalid chars should dissalow reading any file you want :)
-                        var manifestIdFileName = RemoveNonNumericCharacters(manifestId) + ".bin";
-                        var depotId = RemoveNonNumericCharacters(lanCacheLogEntryRaw.DownloadIdentifier!);
-                        var depotIdAndManifestIdentifier = Path.Combine(depotId, manifestIdFileName);
-
-
-                        using var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();
-                        var dbManifestFound = await dbContext.SteamManifests.FirstOrDefaultAsync(t => t.UniqueManifestIdentifier == depotIdAndManifestIdentifier);
-
-                        if (dbManifestFound != null)
+                        _semaphoreSlim.Wait();
+                        await using (var scope = _services.CreateAsyncScope())
                         {
-                            return;
+                            var theManifestUrlPart = lanCacheLogEntryRaw.Request.Split(' ', StringSplitOptions.RemoveEmptyEntries)[1];
+
+                            var everythingAfterManifest = theManifestUrlPart.Split("/manifest/", StringSplitOptions.RemoveEmptyEntries).Last();
+                            var manifestId = everythingAfterManifest.Split("/", StringSplitOptions.RemoveEmptyEntries).First();
+
+                            //Replace invalid chars should dissalow reading any file you want :)
+                            var manifestIdFileName = RemoveNonNumericCharacters(manifestId) + ".bin";
+                            var depotId = RemoveNonNumericCharacters(lanCacheLogEntryRaw.DownloadIdentifier!);
+                            var depotIdAndManifestIdentifier = Path.Combine(depotId, manifestIdFileName);
+
+
+                            using var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();
+                            var dbManifestFound = await dbContext.SteamManifests.FirstOrDefaultAsync(t => t.UniqueManifestIdentifier == depotIdAndManifestIdentifier);
+
+                            if (dbManifestFound != null)
+                            {
+                                return;
+                            }
+
+                            var fullPath = Path.Combine(_manifestDirectory, depotIdAndManifestIdentifier);
+                            Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
+
+
+                            var cachedUrl = $"http://lancache.steamcontent.com{theManifestUrlPart}";
+                            using var httpClient = _httpClientFactoryForManifestDownloads.CreateClient();
+                            httpClient.DefaultRequestHeaders.Add("Host", lanCacheLogEntryRaw.Host);
+                            httpClient.DefaultRequestHeaders.Add("User-Agent", "Valve/Steam HTTP Client 1.0");
+                            httpClient.DefaultRequestHeaders.Referrer = LanCacheLogReaderHostedService.SkipLogLineReferrer; //Add this to ensure we don't process this line again
+                            var manifestResponse = await httpClient.GetAsync(cachedUrl);
+
+
+
+
+
+                            if (!manifestResponse.IsSuccessStatusCode)
+                            {
+                                Console.WriteLine($"Warning: Tried to obtain manifest for: {lanCacheLogEntryRaw.DownloadIdentifier} but status code was: {manifestResponse.StatusCode}");
+                                return;
+                            }
+                            var manifestBytes = await manifestResponse.Content.ReadAsByteArrayAsync();
+
+
+                            var dbManifest = ManifestBytesToDbSteamManifest(manifestBytes, depotIdAndManifestIdentifier);
+
+                            if (dbManifest == null)
+                            {
+                                Console.WriteLine($"Waring: Could not get manifest for depot: {lanCacheLogEntryRaw.DownloadIdentifier}");
+                                return;
+                            }
+
+                            var dbValue = dbContext.SteamManifests.FirstOrDefault(t => t.DepotId == dbManifest.DepotId && t.CreationTime == dbManifest.CreationTime);
+                            if (dbValue != null)
+                            {
+                                dbContext.Entry(dbValue).CurrentValues.SetValues(dbManifest);
+                                Console.WriteLine($"Info: Updated manifest for {lanCacheLogEntryRaw.DownloadIdentifier}");
+                            }
+                            else
+                            {
+                                await dbContext.SteamManifests.AddAsync(dbManifest);
+                                Console.WriteLine($"Info: Added manifest for {lanCacheLogEntryRaw.DownloadIdentifier}");
+                            }
+
+                            await File.WriteAllBytesAsync(fullPath, manifestBytes);
+                            await dbContext.SaveChangesAsync();
                         }
-
-                        var fullPath = Path.Combine(_manifestDirectory, depotIdAndManifestIdentifier);
-                        Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
-
-
-                        var cachedUrl = $"http://lancache.steamcontent.com{theManifestUrlPart}";
-                        using var httpClient = _httpClientFactoryForManifestDownloads.CreateClient();
-                        httpClient.DefaultRequestHeaders.Add("Host", lanCacheLogEntryRaw.Host);
-                        httpClient.DefaultRequestHeaders.Add("User-Agent", "Valve/Steam HTTP Client 1.0");
-                        httpClient.DefaultRequestHeaders.Referrer = LanCacheLogReaderHostedService.SkipLogLineReferrer; //Add this to ensure we don't process this line again
-                        var manifestResponse = await httpClient.GetAsync(cachedUrl);
-
-
-
-
-
-                        if (!manifestResponse.IsSuccessStatusCode)
-                        {
-                            Console.WriteLine($"Warning: Tried to obtain manifest for: {lanCacheLogEntryRaw.DownloadIdentifier} but status code was: {manifestResponse.StatusCode}");
-                            return;
-                        }
-                        var manifestBytes = await manifestResponse.Content.ReadAsByteArrayAsync();
-
-
-                        var dbManifest = ManifestBytesToDbSteamManifest(manifestBytes, depotIdAndManifestIdentifier);
-
-                        if (dbManifest == null)
-                        {
-                            Console.WriteLine($"Waring: Could not get manifest for depot: {lanCacheLogEntryRaw.DownloadIdentifier}");
-                            return;
-                        }
-
-                        var dbValue = dbContext.SteamManifests.FirstOrDefault(t => t.DepotId == dbManifest.DepotId && t.CreationTime == dbManifest.CreationTime);
-                        if (dbValue != null)
-                        {
-                            dbContext.Entry(dbValue).CurrentValues.SetValues(dbManifest);
-                            Console.WriteLine($"Info: Updated manifest for {lanCacheLogEntryRaw.DownloadIdentifier}");
-                        }
-                        else
-                        {
-                            await dbContext.SteamManifests.AddAsync(dbManifest);
-                            Console.WriteLine($"Info: Added manifest for {lanCacheLogEntryRaw.DownloadIdentifier}");
-                        }
-
-                        await File.WriteAllBytesAsync(fullPath, manifestBytes);
-                        await dbContext.SaveChangesAsync();
+                    }
+                    finally
+                    {
+                        _semaphoreSlim.Release();
                     }
                 });
             });

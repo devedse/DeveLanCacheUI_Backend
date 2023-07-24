@@ -106,7 +106,7 @@ namespace DeveLanCacheUI_Backend.LogReading
 
                         foreach (var lanCacheLogLine in filteredLogLines)
                         {
-                            if (lanCacheLogLine.CacheIdentifier == "steam" && lanCacheLogLine.Request.Contains("/manifest/") && DateTime.Now < lanCacheLogLine.DateTime.AddMinutes(5))
+                            if (lanCacheLogLine.CacheIdentifier == "steam" && lanCacheLogLine.Request.Contains("/manifest/") && DateTime.Now < lanCacheLogLine.DateTime.AddDays(14))
                             {
                                 Console.WriteLine($"Found manifest for Depot: {lanCacheLogLine.DownloadIdentifier}");
                                 var ttt = lanCacheLogLine;
