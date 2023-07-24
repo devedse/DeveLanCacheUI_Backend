@@ -22,4 +22,10 @@
     <ProjectReference Include="..\DeveLanCacheUI_Backend\DeveLanCacheUI_Backend.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="ProtoTest\10336669592858206477">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

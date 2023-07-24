@@ -3,6 +3,7 @@ using DeveLanCacheUI_Backend.Db.DbModels;
 using DeveLanCacheUI_Backend.Hubs;
 using DeveLanCacheUI_Backend.LogReading.Models;
 using DeveLanCacheUI_Backend.Steam;
+using DeveLanCacheUI_Backend.SteamProto;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Polly;
@@ -12,20 +13,26 @@ namespace DeveLanCacheUI_Backend.LogReading
 {
     public class LanCacheLogReaderHostedService : BackgroundService
     {
-        public IServiceProvider Services { get; }
+        public static Uri SkipLogLineReferrer = new Uri("http://develancacheui_skipthislogline");
+        public static string SkipLogLineReferrerString = SkipLogLineReferrer.ToString();
+
+        private readonly IServiceProvider _services;
 
         private readonly IConfiguration _configuration;
         private readonly IHubContext<LanCacheHub> _lanCacheHubContext;
+        private readonly SteamManifestService _steamManifestService;
         private readonly ILogger<LanCacheLogReaderHostedService> _logger;
 
         public LanCacheLogReaderHostedService(IServiceProvider services,
             IConfiguration configuration,
             IHubContext<LanCacheHub> lanCacheHubContext,
+            SteamManifestService steamManifestService,
             ILogger<LanCacheLogReaderHostedService> logger)
         {
-            Services = services;
+            _services = services;
             _configuration = configuration;
             _lanCacheHubContext = lanCacheHubContext;
+            _steamManifestService = steamManifestService;
             _logger = logger;
         }
 
@@ -33,7 +40,7 @@ namespace DeveLanCacheUI_Backend.LogReading
         {
             await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
 
-            await SimpleSteamDataSeeder.GoSeed(Services);
+            await SimpleSteamDataSeeder.GoSeed(_services);
 
             await GoRun(stoppingToken);
         }
@@ -41,7 +48,7 @@ namespace DeveLanCacheUI_Backend.LogReading
         private async Task GoRun(CancellationToken stoppingToken)
         {
             var oldestLog = DateTime.MinValue;
-            await using (var scope = Services.CreateAsyncScope())
+            await using (var scope = _services.CreateAsyncScope())
             {
                 using var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();
                 var lastUpdatedItem = await dbContext.DownloadEvents.OrderByDescending(t => t.LastUpdatedAt).FirstOrDefaultAsync();
@@ -74,7 +81,7 @@ namespace DeveLanCacheUI_Backend.LogReading
                 Console.WriteLine($"Processing {currentSet.Count} lines... First DateTime: {currentSet.FirstOrDefault()?.DateTime} (Total processed: {totalLinesProcessed})");
                 totalLinesProcessed += currentSet.Count;
 
-                await using (var scope = Services.CreateAsyncScope())
+                await using (var scope = _services.CreateAsyncScope())
                 {
 
 
@@ -91,69 +98,32 @@ namespace DeveLanCacheUI_Backend.LogReading
                         using var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();
 
                         //var filteredLogLines = currentSet.Where(t => t.CacheIdentifier == "steam");
-                        var filteredLogLines = currentSet.Where(t => t.CacheIdentifier != "127.0.0.1");
+                        IEnumerable<LanCacheLogEntryRaw> filteredLogLines = currentSet;
+                        filteredLogLines = filteredLogLines.Where(t => t.CacheIdentifier != "127.0.0.1");
+                        filteredLogLines = filteredLogLines.Where(t => t.Referer != SkipLogLineReferrerString);
 
-                        //Dictionary<int, DbSteamDepot> steamDepotsCache = new Dictionary<int, DbSteamDepot>();
                         Dictionary<string, DbDownloadEvent> steamAppDownloadEventsCache = new Dictionary<string, DbDownloadEvent>();
 
-                        //var groupedLogLines = parsedLogLinesSteam.GroupBy(t => new { t.CacheIdentifier, t.DownloadIdentifier });
-
-                        //foreach (var group in groupedLogLines)
-                        //{
-                        //    var groupedOnClientIps = group.GroupBy(t => t.RemoteAddress);
-
-                        //    foreach (var groupOnIp in groupedOnClientIps)
-                        //    {
-                        //        var firstUpdateEntryForThisDepotId = group.OrderBy(t => t.DateTime).First();
-
-                        //        //See if anything happened here in the last 5 minutes
-                        //        var foundEventInCache = await dbContext.DownloadEvents
-                        //            .FirstOrDefaultAsync(t =>
-                        //                t.CacheIdentifier == group.Key.CacheIdentifier &&
-                        //                t.DownloadIdentifierString == group.Key.DownloadIdentifier &&
-                        //                t.ClientIp == groupOnIp.Key &&
-                        //                t.LastUpdatedAt > firstUpdateEntryForThisDepotId.DateTime.AddMinutes(-5)
-                        //                );
-
-                        //        if (foundEventInCache != null)
-                        //        {
-                        //            var cacheKey = $"{group.Key.CacheIdentifier}_||_{group.Key.DownloadIdentifier}_||_{groupOnIp.Key}";
-                        //            steamAppDownloadEventsCache.Add(cacheKey, foundEventInCache);
-                        //        }
-
-                        //        //var cacheKey = $"{group.Key.CacheIdentifier}_||_{group.Key.DownloadIdentifier}_||_{groupOnIp.Key}";
-                        //        //if (foundEventInCache == null)
-                        //        //{
-                        //        //    Console.WriteLine($"Adding new event: {cacheKey} ({firstUpdateEntryForThisDepotId.DateTime})");
-                        //        //    int.TryParse(group.Key.DownloadIdentifier, out var downloadIdentifierInt);
-                        //        //    foundEventInCache = new DbDownloadEvent()
-                        //        //    {
-                        //        //        CacheIdentifier = group.Key.CacheIdentifier,
-                        //        //        DownloadIdentifier = downloadIdentifierInt,
-                        //        //        DownloadIdentifierString = group.Key.DownloadIdentifier,
-                        //        //        CreatedAt = firstUpdateEntryForThisDepotId.DateTime,
-                        //        //        LastUpdatedAt = firstUpdateEntryForThisDepotId.DateTime,
-                        //        //        ClientIp = groupOnIp.Key
-                        //        //    };
-                        //        //    await dbContext.DownloadEvents.AddAsync(foundEventInCache);
-                        //        //}
-                        //        //steamAppDownloadEventsCache.Add(cacheKey, foundEventInCache);
-                        //    }
-                        //}
-
-                        foreach (var steamLogLine in filteredLogLines)
+                        foreach (var lanCacheLogLine in filteredLogLines)
                         {
-                            var cacheKey = $"{steamLogLine.CacheIdentifier}_||_{steamLogLine.DownloadIdentifier}_||_{steamLogLine.RemoteAddress}";
+                            if (lanCacheLogLine.CacheIdentifier == "steam" && lanCacheLogLine.Request.Contains("/manifest/") && DateTime.Now < lanCacheLogLine.DateTime.AddMinutes(5))
+                            {
+                                Console.WriteLine($"Found manifest for Depot: {lanCacheLogLine.DownloadIdentifier}");
+                                var ttt = lanCacheLogLine;
+                                _steamManifestService.TryToDownloadManifest(ttt);
+                            }
+
+                            var cacheKey = $"{lanCacheLogLine.CacheIdentifier}_||_{lanCacheLogLine.DownloadIdentifier}_||_{lanCacheLogLine.RemoteAddress}";
                             steamAppDownloadEventsCache.TryGetValue(cacheKey, out var cachedEvent);
 
                             if (cachedEvent == null)
                             {
                                 cachedEvent = await dbContext.DownloadEvents
                                    .FirstOrDefaultAsync(t =>
-                                       t.CacheIdentifier == steamLogLine.CacheIdentifier &&
-                                       t.DownloadIdentifierString == steamLogLine.DownloadIdentifier &&
-                                       t.ClientIp == steamLogLine.RemoteAddress &&
-                                       t.LastUpdatedAt > steamLogLine.DateTime.AddMinutes(-5)
+                                       t.CacheIdentifier == lanCacheLogLine.CacheIdentifier &&
+                                       t.DownloadIdentifierString == lanCacheLogLine.DownloadIdentifier &&
+                                       t.ClientIp == lanCacheLogLine.RemoteAddress &&
+                                       t.LastUpdatedAt > lanCacheLogLine.DateTime.AddMinutes(-5)
                                        );
                                 if (cachedEvent != null)
                                 {
@@ -161,32 +131,32 @@ namespace DeveLanCacheUI_Backend.LogReading
                                 }
                             }
 
-                            if (cachedEvent == null || !(cachedEvent.LastUpdatedAt > steamLogLine.DateTime.AddMinutes(-5)))
+                            if (cachedEvent == null || !(cachedEvent.LastUpdatedAt > lanCacheLogLine.DateTime.AddMinutes(-5)))
                             {
-                                Console.WriteLine($"Adding new event because more then 5 minutes no update: {cacheKey} ({steamLogLine.DateTime})");
+                                Console.WriteLine($"Adding new event because more then 5 minutes no update: {cacheKey} ({lanCacheLogLine.DateTime})");
 
-                                int.TryParse(steamLogLine.DownloadIdentifier, out var downloadIdentifierInt);
+                                int.TryParse(lanCacheLogLine.DownloadIdentifier, out var downloadIdentifierInt);
                                 cachedEvent = new DbDownloadEvent()
                                 {
-                                    CacheIdentifier = steamLogLine.CacheIdentifier,
-                                    DownloadIdentifierString = steamLogLine.DownloadIdentifier,
+                                    CacheIdentifier = lanCacheLogLine.CacheIdentifier,
+                                    DownloadIdentifierString = lanCacheLogLine.DownloadIdentifier,
                                     DownloadIdentifier = downloadIdentifierInt,
-                                    CreatedAt = steamLogLine.DateTime,
-                                    LastUpdatedAt = steamLogLine.DateTime,
-                                    ClientIp = steamLogLine.RemoteAddress
+                                    CreatedAt = lanCacheLogLine.DateTime,
+                                    LastUpdatedAt = lanCacheLogLine.DateTime,
+                                    ClientIp = lanCacheLogLine.RemoteAddress
                                 };
                                 steamAppDownloadEventsCache[cacheKey] = cachedEvent;
                                 await dbContext.DownloadEvents.AddAsync(cachedEvent);
                             }
 
-                            cachedEvent.LastUpdatedAt = steamLogLine.DateTime;
-                            if (steamLogLine.UpstreamCacheStatus == "HIT")
+                            cachedEvent.LastUpdatedAt = lanCacheLogLine.DateTime;
+                            if (lanCacheLogLine.UpstreamCacheStatus == "HIT")
                             {
-                                cachedEvent.CacheHitBytes += steamLogLine.BodyBytesSentLong;
+                                cachedEvent.CacheHitBytes += lanCacheLogLine.BodyBytesSentLong;
                             }
                             else
                             {
-                                cachedEvent.CacheMissBytes += steamLogLine.BodyBytesSentLong;
+                                cachedEvent.CacheMissBytes += lanCacheLogLine.BodyBytesSentLong;
                             }
                         }
 

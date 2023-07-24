@@ -20,6 +20,8 @@ namespace DeveLanCacheUI_Backend.Controllers.Models
         public long CacheHitBytes { get; set; }
         public long CacheMissBytes { get; set; }
 
+        public ulong TotalBytes { get; set; }
+
 
         public SteamDepot? SteamDepot { get; set; }
     }

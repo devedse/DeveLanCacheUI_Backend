@@ -10,6 +10,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="DeveLanCacheUIData\**" />
+    <Content Remove="DeveLanCacheUIData\**" />
+    <EmbeddedResource Remove="DeveLanCacheUIData\**" />
+    <None Remove="DeveLanCacheUIData\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="DeveLanCacheUI.ico" />
   </ItemGroup>
 
@@ -24,6 +31,8 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.9" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.18.1" />
     <PackageReference Include="Polly" Version="7.2.4" />
+    <PackageReference Include="protobuf-net" Version="3.2.26" />
+    <PackageReference Include="SteamKit2" Version="2.4.1" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
   </ItemGroup>
 

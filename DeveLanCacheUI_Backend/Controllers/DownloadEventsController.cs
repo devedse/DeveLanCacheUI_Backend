@@ -42,43 +42,60 @@ namespace DeveLanCacheUI_Backend.Controllers
             }
             tmpResult = tmpResult.Where(t => t.CacheHitBytes != 0 || t.CacheMissBytes != 0);
 
-            var result = await tmpResult
-                .GroupJoin(
-                    _dbContext.SteamDepots,
-                    downloadEvent => downloadEvent.DownloadIdentifier,
-                    steamDepot => steamDepot.Id,
-                    (downloadEvent, steamDepot) => new { downloadEvent, steamDepot }
-                )
-                .SelectMany(
-                    x => x.steamDepot.DefaultIfEmpty(),
-                    (x, y) => new DownloadEvent
-                    {
-                        Id = x.downloadEvent.Id,
-                        CacheIdentifier = x.downloadEvent.CacheIdentifier,
-                        DownloadIdentifier = x.downloadEvent.DownloadIdentifier,
-                        DownloadIdentifierString = x.downloadEvent.DownloadIdentifierString,
-                        ClientIp = x.downloadEvent.ClientIp,
-                        CreatedAt = x.downloadEvent.CreatedAt,
-                        LastUpdatedAt = x.downloadEvent.LastUpdatedAt,
-                        CacheHitBytes = x.downloadEvent.CacheHitBytes,
-                        CacheMissBytes = x.downloadEvent.CacheMissBytes,
-                        SteamDepot = y == null
-                            ? null
-                            : new SteamDepot
-                            {
-                                Id = y.Id,
-                                SteamAppId = y.SteamAppId
-                            }
-                    }
-                ).OrderByDescending(t => t.LastUpdatedAt).Skip(skip).Take(count).ToListAsync();
+            var query = from downloadEvent in tmpResult
+                        join steamDepot in _dbContext.SteamDepots on downloadEvent.DownloadIdentifier equals steamDepot.Id into steamDepotJoin
+                        from steamDepot in steamDepotJoin.DefaultIfEmpty()
+                        let steamManifest = (from sm in _dbContext.SteamManifests
+                                             where sm.DepotId == downloadEvent.DownloadIdentifier
+                                             orderby sm.CreationTime descending
+                                             select sm).FirstOrDefault()
+                        orderby downloadEvent.LastUpdatedAt descending
+                        select new
+                        {
+                            downloadEvent,
+                            steamDepot,
+                            steamManifest
+                        };
+            query = query.Skip(skip).Take(count);
 
-            foreach (var item in result.Where(t => t.CacheIdentifier == "steam" && t.SteamDepot != null))
+            //var queryString = query.ToQueryString();
+
+            var result = await query.ToListAsync();
+
+            var mappedResult = result.Select(item =>
             {
-                item.SteamDepot.SteamApp = SteamApi.SteamApiData?.applist?.apps?.FirstOrDefault(t => t?.appid == item.SteamDepot.SteamAppId);
-            }
+                var downloadEvent = new DownloadEvent
+                {
+                    Id = item.downloadEvent.Id,
+                    CacheIdentifier = item.downloadEvent.CacheIdentifier,
+                    DownloadIdentifier = item.downloadEvent.DownloadIdentifier,
+                    DownloadIdentifierString = item.downloadEvent.DownloadIdentifierString,
+                    ClientIp = item.downloadEvent.ClientIp,
+                    CreatedAt = item.downloadEvent.CreatedAt,
+                    LastUpdatedAt = item.downloadEvent.LastUpdatedAt,
+                    CacheHitBytes = item.downloadEvent.CacheHitBytes,
+                    CacheMissBytes = item.downloadEvent.CacheMissBytes,
+                    TotalBytes = (item.steamManifest?.TotalCompressedSize ?? 0) + (item.steamManifest?.ManifestBytesSize ?? 0),
+                    SteamDepot = item.steamDepot == null
+                        ? null
+                        : new SteamDepot
+                        {
+                            Id = item.steamDepot.Id,
+                            SteamAppId = item.steamDepot.SteamAppId
+                        }
+                };
 
-            return result.ToList();
+                if (downloadEvent.CacheIdentifier == "steam" && downloadEvent.SteamDepot != null)
+                {
+                    downloadEvent.SteamDepot.SteamApp = SteamApi.SteamApiData?.applist?.apps?.FirstOrDefault(t => t?.appid == downloadEvent.SteamDepot.SteamAppId);
+                }
+
+                return downloadEvent;
+            }).ToList();
+
+            return mappedResult;
         }
+
 
         //[HttpGet]
         //public async Task<IEnumerable<EventGroup>> GetBySkipAndCount2(int skip, int count)

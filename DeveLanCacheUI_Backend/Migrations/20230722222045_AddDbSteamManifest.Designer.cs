@@ -3,6 +3,7 @@ using System;
 using DeveLanCacheUI_Backend.Db;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DeveLanCacheUI_Backend.Migrations
 {
     [DbContext(typeof(DeveLanCacheUIDbContext))]
-    partial class DeveLanCacheUIDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230722222045_AddDbSteamManifest")]
+    partial class AddDbSteamManifest
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "7.0.9");
@@ -83,13 +86,16 @@ namespace DeveLanCacheUI_Backend.Migrations
 
             modelBuilder.Entity("DeveLanCacheUI_Backend.Db.DbModels.DbSteamManifest", b =>
                 {
-                    b.Property<int>("DepotId")
+                    b.Property<uint>("DepotId")
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("CreationTime")
                         .HasColumnType("TEXT");
 
-                    b.Property<ulong>("ManifestBytesSize")
+                    b.Property<ulong>("CalculatedCompressedSize")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<ulong>("CalculatedUncompressedSize")
                         .HasColumnType("INTEGER");
 
                     b.Property<ulong>("TotalCompressedSize")
@@ -98,14 +104,7 @@ namespace DeveLanCacheUI_Backend.Migrations
                     b.Property<ulong>("TotalUncompressedSize")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("UniqueManifestIdentifier")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
                     b.HasKey("DepotId", "CreationTime");
-
-                    b.HasIndex("UniqueManifestIdentifier")
-                        .IsUnique();
 
                     b.ToTable("SteamManifests");
                 });
