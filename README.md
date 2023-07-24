@@ -30,7 +30,7 @@ services:
       - TZ=Europe/Amsterdam
       - LANG=en_GB.UTF-8
     volumes:
-      - "/home/pi/dockercomposers/develancacheui/data:/var/develancacheuidata"
+      - "/home/pi/dockercomposers/develancacheui/backend/data:/var/develancacheuidata"
       - "/mnt/mynas/DockerComposers/lancache/logs:/var/develancacheui/lancachelogs:ro"
   develancacheui_frontend:
     image: devedse/develancacheui_frontend:latest
