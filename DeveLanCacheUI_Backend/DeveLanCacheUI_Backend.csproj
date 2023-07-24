@@ -10,6 +10,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="DeveLanCacheUIData\**" />
+    <Content Remove="DeveLanCacheUIData\**" />
+    <EmbeddedResource Remove="DeveLanCacheUIData\**" />
+    <None Remove="DeveLanCacheUIData\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="DeveLanCacheUI.ico" />
   </ItemGroup>
 

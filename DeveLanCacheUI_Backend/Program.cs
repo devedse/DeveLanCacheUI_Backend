@@ -4,6 +4,7 @@ using DeveLanCacheUI_Backend.DeveHashImageGeneratorStuff;
 using DeveLanCacheUI_Backend.Hubs;
 using DeveLanCacheUI_Backend.LogReading;
 using DeveLanCacheUI_Backend.Steam;
+using DeveLanCacheUI_Backend.SteamProto;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.Rewrite;
@@ -19,10 +20,17 @@ namespace DeveLanCacheUI_Backend
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
+            var deveLanCacheUIDataDirectory = builder.Configuration.GetValue<string>("DeveLanCacheUIDataDirectory");
+            if (deveLanCacheUIDataDirectory != null)
+            {
+                Directory.CreateDirectory(deveLanCacheUIDataDirectory);
+            }
 
             builder.Services.AddDbContext<DeveLanCacheUIDbContext>(options =>
             {
-                options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"));
+                var conString = builder.Configuration.GetConnectionString("DefaultConnection");
+                var conStringReplaced = conString?.Replace("{DeveLanCacheUIDataDirectory}", deveLanCacheUIDataDirectory ?? "");
+                options.UseSqlite(conStringReplaced);
             });
 
             builder.Services.AddControllers(options =>
@@ -46,6 +54,7 @@ namespace DeveLanCacheUI_Backend
             builder.Services.AddHttpClient();
 
             builder.Services.AddSingleton<RoboHashCache>();
+            builder.Services.AddSingleton<SteamManifestService>();
 
             builder.Services.AddSignalR();
             builder.Services.AddResponseCompression(opts =>

@@ -13,25 +13,23 @@ namespace DeveLanCacheUI_Backend.LogReading
 {
     public class LanCacheLogReaderHostedService : BackgroundService
     {
-        public IServiceProvider Services { get; }
+        private readonly IServiceProvider _services;
 
         private readonly IConfiguration _configuration;
         private readonly IHubContext<LanCacheHub> _lanCacheHubContext;
-        private readonly IHttpClientFactory _httpClientFactoryForManifestDownloads;
+        private readonly SteamManifestService _steamManifestService;
         private readonly ILogger<LanCacheLogReaderHostedService> _logger;
-
-        private const bool StoreSteamDbProtoManifestBytesInDb = true;
 
         public LanCacheLogReaderHostedService(IServiceProvider services,
             IConfiguration configuration,
             IHubContext<LanCacheHub> lanCacheHubContext,
-            IHttpClientFactory httpClientFactory,
+            SteamManifestService steamManifestService,
             ILogger<LanCacheLogReaderHostedService> logger)
         {
-            Services = services;
+            _services = services;
             _configuration = configuration;
             _lanCacheHubContext = lanCacheHubContext;
-            _httpClientFactoryForManifestDownloads = httpClientFactory;
+            _steamManifestService = steamManifestService;
             _logger = logger;
         }
 
@@ -39,7 +37,7 @@ namespace DeveLanCacheUI_Backend.LogReading
         {
             await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
 
-            await SimpleSteamDataSeeder.GoSeed(Services);
+            await SimpleSteamDataSeeder.GoSeed(_services);
 
             await GoRun(stoppingToken);
         }
@@ -47,7 +45,7 @@ namespace DeveLanCacheUI_Backend.LogReading
         private async Task GoRun(CancellationToken stoppingToken)
         {
             var oldestLog = DateTime.MinValue;
-            await using (var scope = Services.CreateAsyncScope())
+            await using (var scope = _services.CreateAsyncScope())
             {
                 using var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();
                 var lastUpdatedItem = await dbContext.DownloadEvents.OrderByDescending(t => t.LastUpdatedAt).FirstOrDefaultAsync();
@@ -80,7 +78,7 @@ namespace DeveLanCacheUI_Backend.LogReading
                 Console.WriteLine($"Processing {currentSet.Count} lines... First DateTime: {currentSet.FirstOrDefault()?.DateTime} (Total processed: {totalLinesProcessed})");
                 totalLinesProcessed += currentSet.Count;
 
-                await using (var scope = Services.CreateAsyncScope())
+                await using (var scope = _services.CreateAsyncScope())
                 {
 
 
@@ -99,53 +97,7 @@ namespace DeveLanCacheUI_Backend.LogReading
                         //var filteredLogLines = currentSet.Where(t => t.CacheIdentifier == "steam");
                         var filteredLogLines = currentSet.Where(t => t.CacheIdentifier != "127.0.0.1");
 
-                        //Dictionary<int, DbSteamDepot> steamDepotsCache = new Dictionary<int, DbSteamDepot>();
                         Dictionary<string, DbDownloadEvent> steamAppDownloadEventsCache = new Dictionary<string, DbDownloadEvent>();
-
-                        //var groupedLogLines = parsedLogLinesSteam.GroupBy(t => new { t.CacheIdentifier, t.DownloadIdentifier });
-
-                        //foreach (var group in groupedLogLines)
-                        //{
-                        //    var groupedOnClientIps = group.GroupBy(t => t.RemoteAddress);
-
-                        //    foreach (var groupOnIp in groupedOnClientIps)
-                        //    {
-                        //        var firstUpdateEntryForThisDepotId = group.OrderBy(t => t.DateTime).First();
-
-                        //        //See if anything happened here in the last 5 minutes
-                        //        var foundEventInCache = await dbContext.DownloadEvents
-                        //            .FirstOrDefaultAsync(t =>
-                        //                t.CacheIdentifier == group.Key.CacheIdentifier &&
-                        //                t.DownloadIdentifierString == group.Key.DownloadIdentifier &&
-                        //                t.ClientIp == groupOnIp.Key &&
-                        //                t.LastUpdatedAt > firstUpdateEntryForThisDepotId.DateTime.AddMinutes(-5)
-                        //                );
-
-                        //        if (foundEventInCache != null)
-                        //        {
-                        //            var cacheKey = $"{group.Key.CacheIdentifier}_||_{group.Key.DownloadIdentifier}_||_{groupOnIp.Key}";
-                        //            steamAppDownloadEventsCache.Add(cacheKey, foundEventInCache);
-                        //        }
-
-                        //        //var cacheKey = $"{group.Key.CacheIdentifier}_||_{group.Key.DownloadIdentifier}_||_{groupOnIp.Key}";
-                        //        //if (foundEventInCache == null)
-                        //        //{
-                        //        //    Console.WriteLine($"Adding new event: {cacheKey} ({firstUpdateEntryForThisDepotId.DateTime})");
-                        //        //    int.TryParse(group.Key.DownloadIdentifier, out var downloadIdentifierInt);
-                        //        //    foundEventInCache = new DbDownloadEvent()
-                        //        //    {
-                        //        //        CacheIdentifier = group.Key.CacheIdentifier,
-                        //        //        DownloadIdentifier = downloadIdentifierInt,
-                        //        //        DownloadIdentifierString = group.Key.DownloadIdentifier,
-                        //        //        CreatedAt = firstUpdateEntryForThisDepotId.DateTime,
-                        //        //        LastUpdatedAt = firstUpdateEntryForThisDepotId.DateTime,
-                        //        //        ClientIp = groupOnIp.Key
-                        //        //    };
-                        //        //    await dbContext.DownloadEvents.AddAsync(foundEventInCache);
-                        //        //}
-                        //        //steamAppDownloadEventsCache.Add(cacheKey, foundEventInCache);
-                        //    }
-                        //}
 
                         foreach (var lanCacheLogLine in filteredLogLines)
                         {
@@ -153,7 +105,7 @@ namespace DeveLanCacheUI_Backend.LogReading
                             {
                                 Console.WriteLine($"Found manifest for Depot: {lanCacheLogLine.DownloadIdentifier}");
                                 var ttt = lanCacheLogLine;
-                                TryToDownloadManifest(ttt);
+                                _steamManifestService.TryToDownloadManifest(ttt);
                             }
 
                             var cacheKey = $"{lanCacheLogLine.CacheIdentifier}_||_{lanCacheLogLine.DownloadIdentifier}_||_{lanCacheLogLine.RemoteAddress}";
@@ -208,63 +160,6 @@ namespace DeveLanCacheUI_Backend.LogReading
                     });
                 }
             }
-        }
-
-        private void TryToDownloadManifest(LanCacheLogEntryRaw lanCacheLogEntryRaw)
-        {
-            _ = Task.Run(async () =>
-            {
-                var fallbackPolicy = Policy
-                    .Handle<Exception>()
-                    .FallbackAsync(async (ct) =>
-                    {
-                        Console.WriteLine($"Manifest saving: All retries failed, skipping...");
-                    });
-
-                var retryPolicy = Policy
-                   .Handle<Exception>()
-                   .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
-                   (exception, timeSpan, context) =>
-                   {
-                       Console.WriteLine($"Manifest saving: An error occurred while trying to save changes: {exception.Message}");
-                   });
-
-                await fallbackPolicy.WrapAsync(retryPolicy).ExecuteAsync(async () =>
-                {
-                    await using (var scope = Services.CreateAsyncScope())
-                    {
-                        using var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();
-                        using var httpClient = _httpClientFactoryForManifestDownloads.CreateClient();
-                        var theManifestUrlPart = lanCacheLogEntryRaw.Request.Split(' ', StringSplitOptions.RemoveEmptyEntries)[1];
-                        var url = $"http://{lanCacheLogEntryRaw.Host}{theManifestUrlPart}";
-                        var manifestResponse = await httpClient.GetAsync(url);
-                        if (!manifestResponse.IsSuccessStatusCode)
-                        {
-                            Console.WriteLine($"Warning: Tried to obtain manifest for: {lanCacheLogEntryRaw.DownloadIdentifier} but status code was: {manifestResponse.StatusCode}");
-                        }
-                        var manifestBytes = await manifestResponse.Content.ReadAsByteArrayAsync();
-                        var dbManifest = SteamManifestHelper.ManifestBytesToDbSteamManifest(manifestBytes, StoreSteamDbProtoManifestBytesInDb);
-
-                        if (dbManifest == null)
-                        {
-                            Console.WriteLine($"Waring: Could not get manifest for depot: {lanCacheLogEntryRaw.DownloadIdentifier}");
-                        }
-
-                        var dbValue = dbContext.SteamManifests.FirstOrDefault(t => t.DepotId == dbManifest.DepotId && t.CreationTime == dbManifest.CreationTime);
-                        if (dbValue != null)
-                        {
-                            dbContext.Entry(dbValue).CurrentValues.SetValues(dbManifest);
-                            Console.WriteLine($"Info: Updated manifest for {lanCacheLogEntryRaw.DownloadIdentifier}");
-                        }
-                        else
-                        {
-                            await dbContext.SteamManifests.AddAsync(dbManifest);
-                            Console.WriteLine($"Info: Added manifest for {lanCacheLogEntryRaw.DownloadIdentifier}");
-                        }
-                        await dbContext.SaveChangesAsync();
-                    }
-                });
-            });
         }
 
         public IEnumerable<List<LanCacheLogEntryRaw>> Batch2(IEnumerable<LanCacheLogEntryRaw?> collection, int batchSize, DateTime skipOlderThen)

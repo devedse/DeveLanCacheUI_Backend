@@ -1,10 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Text.Json;
 
-namespace DeveLanCacheUI_Backend.Db.DbModels
+namespace DeveLanCacheUI_Backend.Controllers.Models
 {
-    [PrimaryKey(nameof(DepotId), nameof(CreationTime))]
-    [Index(nameof(UniqueManifestIdentifier), IsUnique = true)]
-    public class DbSteamManifest
+    public class SteamManifest
     {
         public required int DepotId { get; set; }
         public required DateTime CreationTime { get; set; }
@@ -12,8 +10,10 @@ namespace DeveLanCacheUI_Backend.Db.DbModels
         public required ulong TotalCompressedSize { get; set; }
         public required ulong TotalUncompressedSize { get; set; }
 
+        public required JsonDocument? ProtobufDataAsJson { get; set; }
+
         public required string UniqueManifestIdentifier { get; set; }
 
-        public required ulong ManifestBytesSize { get; set; }
+        public ulong ManifestBytesSize { get; set; }
     }
 }
