@@ -13,6 +13,9 @@ namespace DeveLanCacheUI_Backend.LogReading
 {
     public class LanCacheLogReaderHostedService : BackgroundService
     {
+        public static Uri SkipLogLineReferrer = new Uri("http://develancacheui_skipthislogline");
+        public static string SkipLogLineReferrerString = SkipLogLineReferrer.ToString();
+
         private readonly IServiceProvider _services;
 
         private readonly IConfiguration _configuration;
@@ -95,7 +98,9 @@ namespace DeveLanCacheUI_Backend.LogReading
                         using var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();
 
                         //var filteredLogLines = currentSet.Where(t => t.CacheIdentifier == "steam");
-                        var filteredLogLines = currentSet.Where(t => t.CacheIdentifier != "127.0.0.1");
+                        IEnumerable<LanCacheLogEntryRaw> filteredLogLines = currentSet;
+                        filteredLogLines = filteredLogLines.Where(t => t.CacheIdentifier != "127.0.0.1");
+                        filteredLogLines = filteredLogLines.Where(t => t.Referer != SkipLogLineReferrerString);
 
                         Dictionary<string, DbDownloadEvent> steamAppDownloadEventsCache = new Dictionary<string, DbDownloadEvent>();
 
