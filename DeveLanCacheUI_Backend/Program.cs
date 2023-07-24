@@ -82,7 +82,7 @@ namespace DeveLanCacheUI_Backend
             using (var scope = app.Services.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();
-                Console.WriteLine("Migrating DB...");
+                Console.WriteLine("Migrating DB (ensure the database folder from the query string exists)...");
                 dbContext.Database.Migrate();
                 Console.WriteLine("DB migration completed");
             }
