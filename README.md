@@ -7,6 +7,8 @@ As of version 1.0.57 you need to migrate to a new Docker-Compose.yml. Here's how
 
 ![Screenshot](DockerComposeMigrationGuide.png)
 
+Note: Also add the DNS line if you errors in the container logs that it can't get the manifests due to a 401 unauthorized
+
 ## Screenshots
 
 Can show Steam Games that were downloaded / cached:
@@ -40,6 +42,8 @@ services:
     volumes:
       - "/home/pi/dockercomposers/develancacheui/backend:/var/develancacheuidata"
       - "/mnt/mynas/DockerComposers/lancache/logs:/var/develancacheui/lancachelogs:ro"
+      dns:
+      - 10.88.20.254
   develancacheui_frontend:
     image: devedse/develancacheui_frontend:latest
     restart: unless-stopped
