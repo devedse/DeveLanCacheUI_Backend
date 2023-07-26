@@ -8,7 +8,10 @@ using DeveLanCacheUI_Backend.SteamProto;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.Rewrite;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
+using System.Data.Common;
 using System.Text.Json.Serialization;
 
 namespace DeveLanCacheUI_Backend
@@ -26,10 +29,31 @@ namespace DeveLanCacheUI_Backend
                 Directory.CreateDirectory(deveLanCacheUIDataDirectory);
             }
 
+            var conString = builder.Configuration.GetConnectionString("DefaultConnection");
+            var conStringReplaced = conString?.Replace("{DeveLanCacheUIDataDirectory}", deveLanCacheUIDataDirectory ?? "");
+            var conStringBuilder = new SqliteConnectionStringBuilder(conStringReplaced);
+
+            try
+            {
+                string filePath = conStringBuilder.DataSource;
+                var lastPartFilePath = filePath?.Split(":", StringSplitOptions.RemoveEmptyEntries)?.LastOrDefault();
+                if (!string.IsNullOrWhiteSpace(lastPartFilePath))
+                {
+                    var curDir = Directory.GetCurrentDirectory();
+                    var parent = Path.GetDirectoryName(lastPartFilePath);
+                    if (!Directory.Exists(parent))
+                    {
+                        Directory.CreateDirectory(parent);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Could not create subfolder for database. Ensure this exists: {ex.ToString()}");
+            }
+
             builder.Services.AddDbContext<DeveLanCacheUIDbContext>(options =>
             {
-                var conString = builder.Configuration.GetConnectionString("DefaultConnection");
-                var conStringReplaced = conString?.Replace("{DeveLanCacheUIDataDirectory}", deveLanCacheUIDataDirectory ?? "");
                 options.UseSqlite(conStringReplaced);
             });
 
