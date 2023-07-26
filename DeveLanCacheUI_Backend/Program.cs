@@ -30,10 +30,10 @@ namespace DeveLanCacheUI_Backend
             var conString = builder.Configuration.GetConnectionString("DefaultConnection");
             var conStringReplaced = conString?.Replace("{DeveLanCacheUIDataDirectory}", deveLanCacheUIDataDirectory ?? "");
 
-            var sqliteFileName = SqliteFolderCreator.GetFileNameFromSqliteConnectionString(conStringReplaced);
-
             try
             {
+                var sqliteFileName = SqliteFolderCreator.GetFileNameFromSqliteConnectionString(conStringReplaced);
+
                 var invalidPathChars = Path.GetInvalidPathChars();
                 if (!string.IsNullOrWhiteSpace(sqliteFileName) && sqliteFileName.All(t => !invalidPathChars.Any(z => t == z)))
                 {
