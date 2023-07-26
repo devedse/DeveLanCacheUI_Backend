@@ -1,6 +1,7 @@
 
 using DeveLanCacheUI_Backend.Db;
 using DeveLanCacheUI_Backend.DeveHashImageGeneratorStuff;
+using DeveLanCacheUI_Backend.Helpers;
 using DeveLanCacheUI_Backend.Hubs;
 using DeveLanCacheUI_Backend.LogReading;
 using DeveLanCacheUI_Backend.Steam;
@@ -8,10 +9,7 @@ using DeveLanCacheUI_Backend.SteamProto;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.Rewrite;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using System.Data;
-using System.Data.Common;
 using System.Text.Json.Serialization;
 
 namespace DeveLanCacheUI_Backend
@@ -31,17 +29,16 @@ namespace DeveLanCacheUI_Backend
 
             var conString = builder.Configuration.GetConnectionString("DefaultConnection");
             var conStringReplaced = conString?.Replace("{DeveLanCacheUIDataDirectory}", deveLanCacheUIDataDirectory ?? "");
-            var conStringBuilder = new SqliteConnectionStringBuilder(conStringReplaced);
+
+            var sqliteFileName = SqliteFolderCreator.GetFileNameFromSqliteConnectionString(conStringReplaced);
 
             try
             {
-                string filePath = conStringBuilder.DataSource;
-                var lastPartFilePath = filePath?.Split(":", StringSplitOptions.RemoveEmptyEntries)?.LastOrDefault();
-                if (!string.IsNullOrWhiteSpace(lastPartFilePath))
+                var invalidPathChars = Path.GetInvalidPathChars();
+                if (!string.IsNullOrWhiteSpace(sqliteFileName) && sqliteFileName.All(t => !invalidPathChars.Any(z => t == z)))
                 {
-                    var curDir = Directory.GetCurrentDirectory();
-                    var parent = Path.GetDirectoryName(lastPartFilePath);
-                    if (!Directory.Exists(parent))
+                    var parent = Path.GetDirectoryName(sqliteFileName);
+                    if (!string.IsNullOrWhiteSpace(parent) && !Directory.Exists(parent))
                     {
                         Directory.CreateDirectory(parent);
                     }
@@ -49,7 +46,7 @@ namespace DeveLanCacheUI_Backend
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Could not create subfolder for database. Ensure this exists: {ex.ToString()}");
+                Console.WriteLine($"Could not create subfolder for database. Ensure this exists: {sqliteFileName} with exception: {ex}");
             }
 
             builder.Services.AddDbContext<DeveLanCacheUIDbContext>(options =>
