@@ -2,9 +2,8 @@
 {
     public class SteamDepot
     {
-        public int Id { get; set; }
+        public uint Id { get; set; }
 
-        public App? SteamApp { get; set; }
-        public int? SteamAppId { get; set; }
+        public uint? SteamAppId { get; set; }
     }
 }

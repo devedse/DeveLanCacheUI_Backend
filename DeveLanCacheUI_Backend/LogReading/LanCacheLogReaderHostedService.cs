@@ -1,4 +1,6 @@
-﻿namespace DeveLanCacheUI_Backend.LogReading
+﻿using DbContext = DeveLanCacheUI_Backend.Db.DeveLanCacheUIDbContext;
+
+namespace DeveLanCacheUI_Backend.LogReading
 {
     public class LanCacheLogReaderHostedService : BackgroundService
     {
@@ -11,6 +13,35 @@
         private readonly IHubContext<LanCacheHub> _lanCacheHubContext;
         private readonly SteamManifestService _steamManifestService;
         private readonly ILogger<LanCacheLogReaderHostedService> _logger;
+
+        /// <summary>
+        /// These app ids will be excluded from processing as they introduce a lot of noise in the logs.
+        /// These are primarily the "Direct X Runtime" and ".NET Runtime" installers that are shared by nearly
+        /// every single game on Steam.  Since they're so small and so frequent, excluding them should make the
+        /// remaining logs far more usable.
+        /// </summary>
+        private readonly HashSet<string> ExcludedAppIds = new HashSet<string>()
+        {
+            "229033",
+            "229000",
+            "229001",
+            "229002",
+            "229003",
+            "229004",
+            "229005",
+            "229006",
+            "229007",
+            "228981",
+            "228982",
+            "228983",
+            "228984",
+            "228985",
+            "228986",
+            "228987",
+            "228988",
+            "228989",
+            "228990"
+        };
 
         public LanCacheLogReaderHostedService(IServiceProvider services,
             IConfiguration configuration,
@@ -28,9 +59,6 @@
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
-
-            await SimpleSteamDataSeeder.GoSeed(_services);
-
             await GoRun(stoppingToken);
         }
 
@@ -39,7 +67,7 @@
             var oldestLog = DateTime.MinValue;
             await using (var scope = _services.CreateAsyncScope())
             {
-                using var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();
+                using var dbContext = scope.ServiceProvider.GetRequiredService<DbContext>();
                 var lastUpdatedItem = await dbContext.DownloadEvents.OrderByDescending(t => t.LastUpdatedAt).FirstOrDefaultAsync();
                 if (lastUpdatedItem != null)
                 {
@@ -78,7 +106,7 @@
 
                     await retryPolicy.ExecuteAsync(async () =>
                     {
-                        using var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();
+                        using var dbContext = scope.ServiceProvider.GetRequiredService<DbContext>();
 
                         //var filteredLogLines = currentSet.Where(t => t.CacheIdentifier == "steam");
                         IEnumerable<LanCacheLogEntryRaw> filteredLogLines = currentSet;
@@ -89,6 +117,10 @@
 
                         foreach (var lanCacheLogLine in filteredLogLines)
                         {
+                            if (lanCacheLogLine.CacheIdentifier == "steam" && ExcludedAppIds.Contains(lanCacheLogLine.DownloadIdentifier))
+                            {
+                                continue;
+                            }
                             if (lanCacheLogLine.CacheIdentifier == "steam" && lanCacheLogLine.Request.Contains("/manifest/") && DateTime.Now < lanCacheLogLine.DateTime.AddDays(14))
                             {
                                 _logger.LogInformation($"Found manifest for Depot: {lanCacheLogLine.DownloadIdentifier}");
@@ -177,9 +209,6 @@
                         dontLogForSpecificCounter++;
                         Thread.Sleep(1000);
                         continue;
-                        var logFilePath = _configuration.GetValue<string>("LanCacheLogsDirectory")!;
-                        _logger.LogInformation($"No new log lines, waiting...");
-                        Thread.Sleep(5000);
                     }
                 }
                 else if (logEntry.DateTime > skipOlderThen)

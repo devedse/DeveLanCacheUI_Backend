@@ -1,10 +1,13 @@
-﻿namespace DeveLanCacheUI_Backend.Db.DbModels
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace DeveLanCacheUI_Backend.Db.DbModels
 {
     public class DbSteamDepot
     {
-        [Key]
-        public int Id { get; set; }
+        public uint Id { get; set; }
+        public uint SteamAppId { get; set; }
 
-        public int? SteamAppId { get; set; }
+        [ForeignKey(nameof(SteamAppId))]
+        public SteamAppInfo OwningApp { get; set; } 
     }
 }

@@ -69,14 +69,15 @@ namespace DeveLanCacheUI_Backend.Migrations
 
             modelBuilder.Entity("DeveLanCacheUI_Backend.Db.DbModels.DbSteamDepot", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<uint>("Id")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("SteamAppId")
+                    b.Property<uint>("SteamAppId")
                         .HasColumnType("INTEGER");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id", "SteamAppId");
+
+                    b.HasIndex("SteamAppId");
 
                     b.ToTable("SteamDepots");
                 });
@@ -108,6 +109,37 @@ namespace DeveLanCacheUI_Backend.Migrations
                         .IsUnique();
 
                     b.ToTable("SteamManifests");
+                });
+
+            modelBuilder.Entity("DeveLanCacheUI_Backend.Db.DbModels.SteamAppInfo", b =>
+                {
+                    b.Property<uint>("AppId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("AppId");
+
+                    b.ToTable("SteamApps");
+                });
+
+            modelBuilder.Entity("DeveLanCacheUI_Backend.Db.DbModels.DbSteamDepot", b =>
+                {
+                    b.HasOne("DeveLanCacheUI_Backend.Db.DbModels.SteamAppInfo", "OwningApp")
+                        .WithMany("Depots")
+                        .HasForeignKey("SteamAppId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("OwningApp");
+                });
+
+            modelBuilder.Entity("DeveLanCacheUI_Backend.Db.DbModels.SteamAppInfo", b =>
+                {
+                    b.Navigation("Depots");
                 });
 #pragma warning restore 612, 618
         }

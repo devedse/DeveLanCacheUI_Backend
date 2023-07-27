@@ -16,9 +16,10 @@ namespace DeveLanCacheUI_Backend
             var conString = builder.Configuration.GetConnectionString("DefaultConnection");
             var conStringReplaced = conString?.Replace("{DeveLanCacheUIDataDirectory}", deveLanCacheUIDataDirectory ?? "");
 
-            var sqliteFileName = SqliteFolderCreator.GetFileNameFromSqliteConnectionString(conStringReplaced);
             try
             {
+                var sqliteFileName = SqliteFolderCreator.GetFileNameFromSqliteConnectionString(conStringReplaced);
+
                 var invalidPathChars = Path.GetInvalidPathChars();
                 if (!string.IsNullOrWhiteSpace(sqliteFileName) && sqliteFileName.All(t => !invalidPathChars.Any(z => t == z)))
                 {
@@ -38,6 +39,8 @@ namespace DeveLanCacheUI_Backend
             {
                 options.UseSqlite(conStringReplaced);
             });
+            //TODO make everythging use this
+            //builder.Services.AddSingleton<DbContextFactory>();
 
             builder.Services.AddControllers(options =>
             {
@@ -55,14 +58,18 @@ namespace DeveLanCacheUI_Backend
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
+            //TODO this guy is using up a ton of ram at idle.  ~600mb
             builder.Services.AddHostedService<LanCacheLogReaderHostedService>();
-            builder.Services.AddHostedService<SteamDepotEnricherHostedService>();
-            builder.Services.AddHostedService<SteamDepotDownloaderHostedService>();
+            builder.Services.AddHostedService<SteamAppInfoService>();
 
             builder.Services.AddHttpClient();
 
             builder.Services.AddSingleton<RoboHashCache>();
             builder.Services.AddSingleton<SteamManifestService>();
+
+            //TODO should probably initialize the Steam session here rather than inside the service
+            builder.Services.AddSingleton<Steam3Session>();
+            builder.Services.AddSingleton<AppInfoHandler>();
 
             builder.Services.AddSignalR();
             builder.Services.AddResponseCompression(opts =>
@@ -86,16 +93,25 @@ namespace DeveLanCacheUI_Backend
             // Configure Logging
             Logger logger = new LoggerConfiguration()
                 .MinimumLevel.Information()
-                // Spams "request finished in ms" messages
+                // Spams annoying messages from aspnet core that don't add any real useful info
                 .MinimumLevel.Override("Microsoft.AspNetCore.Hosting.Diagnostics", LogEventLevel.Warning)
+                .MinimumLevel.Override("Microsoft.AspNetCore.Routing", LogEventLevel.Warning)
+                .MinimumLevel.Override("Microsoft.AspNetCore.Mvc.Infrastructure.ObjectResultExecutor", LogEventLevel.Warning)
+                .MinimumLevel.Override("Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker", LogEventLevel.Warning)
+                .MinimumLevel.Override("System.Net.Http.HttpClient.Default.ClientHandler", LogEventLevel.Warning)
+                .MinimumLevel.Override("System.Net.Http.HttpClient.Default.LogicalHandler", LogEventLevel.Warning)
+                .MinimumLevel.Override("Microsoft.AspNetCore.Cors", LogEventLevel.Warning)
                 // Hides Entity Framework generated queries being written to console
                 .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", LogEventLevel.Warning)
                 .Enrich.FromLogContext()
-                .WriteTo.Console(LogEventLevel.Information)
+                // Includes service/class name so that its easier to underestand whats going on
+                .Enrich.WithComputed("SourceContextName", "Substring(SourceContext, LastIndexOf(SourceContext, '.') + 1)")
+                .WriteTo.Console(LogEventLevel.Information, outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContextName}] {Message:lj}{NewLine}{Exception}")
                 .CreateLogger();
 
             builder.Services.AddLogging(l =>
             {
+                
                 l.ClearProviders();
                 l.AddSerilog(logger, true);
             });
@@ -133,7 +149,7 @@ namespace DeveLanCacheUI_Backend
 
             app.MapHub<ChatHub>("/chathub");
             app.MapHub<LanCacheHub>("/lancachehub");
-
+            
             app.Run();
         }
     }
