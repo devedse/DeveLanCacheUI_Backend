@@ -42,7 +42,7 @@ services:
     volumes:
       - "/home/pi/dockercomposers/develancacheui/backend:/var/develancacheuidata"
       - "/mnt/mynas/DockerComposers/lancache/logs:/var/develancacheui/lancachelogs:ro"
-      dns:
+    dns:
       - 10.88.20.254
   develancacheui_frontend:
     image: devedse/develancacheui_frontend:latest
