@@ -46,7 +46,7 @@ namespace DeveLanCacheUI_Backend
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Could not create subfolder for database, exception: {ex}");
+                Console.WriteLine($"Error while creating subfolder for database, exception: {ex}");
             }
 
             builder.Services.AddDbContext<DeveLanCacheUIDbContext>(options =>
