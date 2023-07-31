@@ -50,7 +50,7 @@ services:
     ports:
       - '7302:80'
     environment:
-      - BACKENDURL=https://develancacheui_api.devedse.duckdns.org
+      - BACKENDURL=http://10.88.20.2:7301
 ```
 
 Update the docker-compose.yml with your own URL's. Changing the TZ and LANG only impact the way the container logs. (E.g. 23/04/2023 instead of 04/23/2023)
