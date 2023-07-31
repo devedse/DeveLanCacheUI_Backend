@@ -22,6 +22,51 @@ Can show client / service stats:
 
 ## How to run this
 
+Steps:
+1. Create/mount the relevant directories
+1. Update the docker-compose.yml with your own URL's / paths. Changing the TZ and LANG only impact the way the container logs. (E.g. 23/04/2023 instead of 04/23/2023)
+1. Run the docker-compose file
+1. Copy paste the app-depot-output.csv file in the mounted `depotdir`. This will automatically fill the database with all Depot => App mappings (Grab here: https://github.com/devedse/DeveLanCacheUI_SteamDepotFinder_Runner/releases)
+1. Github Sponsor me 5k euro's kthnx
+1. Profit
+
+### Minimal Setup
+
+This setup is meant to work and change as little configuration values as possible.
+Only change the host part of the volumes and the DNS.
+
+docker-compose.yml:
+
+```
+version: '3'
+
+services:
+  develancacheui_backend:
+    image: devedse/develancacheui_backend:latest
+    restart: unless-stopped
+    ports:
+      - '7301:80'
+    environment:
+      - TZ=Europe/Amsterdam
+      - LANG=en_GB.UTF-8
+    volumes:
+      - "/home/pi/dockercomposers/develancacheui/backend:/var/develancacheuidata"
+      - "/mnt/mynas/DockerComposers/lancache/logs:/var/develancacheui/lancachelogs:ro"
+    dns:
+      - 10.88.20.254
+  develancacheui_frontend:
+    image: devedse/develancacheui_frontend:latest
+    restart: unless-stopped
+    ports:
+      - '7302:80'
+    environment:
+      - BACKENDURL=reverseproxyapi
+```
+
+### Advanced setup
+
+It's possible that you want to configure more, here's an example for that.
+
 docker-compose.yml:
 
 ```
@@ -52,15 +97,6 @@ services:
     environment:
       - BACKENDURL=http://10.88.20.2:7301
 ```
-
-Update the docker-compose.yml with your own URL's. Changing the TZ and LANG only impact the way the container logs. (E.g. 23/04/2023 instead of 04/23/2023)
-
-Steps:
-1. Create/mount the relevant directories
-2. Run the docker-compose file
-3. Copy paste the app-depot-output.csv file in the mounted `depotdir`. This will automatically fill the database with all Depot => App mappings (Grab here: https://github.com/devedse/DeveLanCacheUI_SteamDepotFinder_Runner/releases)
-4. Github Sponsor me 5k euro's kthnx
-5. Profit
 
 ## How it works
 
