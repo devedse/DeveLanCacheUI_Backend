@@ -1,17 +1,3 @@
-
-using DeveLanCacheUI_Backend.Db;
-using DeveLanCacheUI_Backend.DeveHashImageGeneratorStuff;
-using DeveLanCacheUI_Backend.Helpers;
-using DeveLanCacheUI_Backend.Hubs;
-using DeveLanCacheUI_Backend.LogReading;
-using DeveLanCacheUI_Backend.Steam;
-using DeveLanCacheUI_Backend.SteamProto;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.ResponseCompression;
-using Microsoft.AspNetCore.Rewrite;
-using Microsoft.EntityFrameworkCore;
-using System.Text.Json.Serialization;
-
 namespace DeveLanCacheUI_Backend
 {
     public class Program
@@ -53,6 +39,8 @@ namespace DeveLanCacheUI_Backend
             {
                 options.UseSqlite(conStringReplaced);
             });
+            //TODO make everythging use this
+            //builder.Services.AddSingleton<DbContextFactory>();
 
             builder.Services.AddControllers(options =>
             {
@@ -65,17 +53,23 @@ namespace DeveLanCacheUI_Backend
             }).AddJsonOptions(x =>
                  x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+            // Swagger
+            builder.Services.AddControllers().AddJsonOptions(x => x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
+            //TODO this guy is using up a ton of ram at idle.  ~600mb
             builder.Services.AddHostedService<LanCacheLogReaderHostedService>();
-            builder.Services.AddHostedService<SteamDepotEnricherHostedService>();
-            builder.Services.AddHostedService<SteamDepotDownloaderHostedService>();
+            builder.Services.AddHostedService<SteamAppInfoService>();
 
             builder.Services.AddHttpClient();
 
             builder.Services.AddSingleton<RoboHashCache>();
             builder.Services.AddSingleton<SteamManifestService>();
+
+            //TODO should probably initialize the Steam session here rather than inside the service
+            builder.Services.AddSingleton<Steam3Session>();
+            builder.Services.AddSingleton<AppInfoHandler>();
 
             builder.Services.AddSignalR();
             builder.Services.AddResponseCompression(opts =>
@@ -96,16 +90,43 @@ namespace DeveLanCacheUI_Backend
                     });
             });
 
+            // Configure Logging
+            Logger logger = new LoggerConfiguration()
+                .MinimumLevel.Information()
+                // Spams annoying messages from aspnet core that don't add any real useful info
+                .MinimumLevel.Override("Microsoft.AspNetCore.Hosting.Diagnostics", LogEventLevel.Warning)
+                .MinimumLevel.Override("Microsoft.AspNetCore.Routing", LogEventLevel.Warning)
+                .MinimumLevel.Override("Microsoft.AspNetCore.Mvc.Infrastructure.ObjectResultExecutor", LogEventLevel.Warning)
+                .MinimumLevel.Override("Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker", LogEventLevel.Warning)
+                .MinimumLevel.Override("System.Net.Http.HttpClient.Default.ClientHandler", LogEventLevel.Warning)
+                .MinimumLevel.Override("System.Net.Http.HttpClient.Default.LogicalHandler", LogEventLevel.Warning)
+                .MinimumLevel.Override("Microsoft.AspNetCore.Cors", LogEventLevel.Warning)
+                // Hides Entity Framework generated queries being written to console
+                .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", LogEventLevel.Warning)
+                .Enrich.FromLogContext()
+                // Includes service/class name so that its easier to underestand whats going on
+                .Enrich.WithComputed("SourceContextName", "Substring(SourceContext, LastIndexOf(SourceContext, '.') + 1)")
+                .WriteTo.Console(LogEventLevel.Information, outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContextName}] {Message:lj}{NewLine}{Exception}")
+                .CreateLogger();
+
+            builder.Services.AddLogging(l =>
+            {
+                
+                l.ClearProviders();
+                l.AddSerilog(logger, true);
+            });
+
             var app = builder.Build();
 
             app.UseResponseCompression();
 
+            // Applying migrations
             using (var scope = app.Services.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();
                 Console.WriteLine("Migrating DB (ensure the database folder from the query string exists)...");
                 dbContext.Database.Migrate();
-                Console.WriteLine("DB migration completed");
+                logger.Information("DB migration completed");
             }
 
             //Redirect to /swagger
@@ -128,7 +149,7 @@ namespace DeveLanCacheUI_Backend
 
             app.MapHub<ChatHub>("/chathub");
             app.MapHub<LanCacheHub>("/lancachehub");
-
+            
             app.Run();
         }
     }

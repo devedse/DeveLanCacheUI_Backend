@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace DeveLanCacheUI_Backend.Controllers.Models
+﻿namespace DeveLanCacheUI_Backend.Controllers.Models
 {
     public class DownloadEvent
     {

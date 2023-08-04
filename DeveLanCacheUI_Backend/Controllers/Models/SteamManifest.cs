@@ -1,6 +1,4 @@
-﻿using System.Text.Json;
-
-namespace DeveLanCacheUI_Backend.Controllers.Models
+﻿namespace DeveLanCacheUI_Backend.Controllers.Models
 {
     public class SteamManifest
     {

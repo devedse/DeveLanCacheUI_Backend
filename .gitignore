@@ -396,7 +396,10 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
 /DeveLanCacheUI_Backend/develancacheui.db
 /DeveLanCacheUI_Backend/develancacheui.db-shm
 /DeveLanCacheUI_Backend/develancacheui.db-wal
-DeveLanCacheUIData
+DeveLanCacheUIData/DeveLanCacheUI_Backend/Assets/processed
+/DeveLanCacheUI_Backend/Assets/processed
+/DeveLanCacheUI_Backend/DeveLanCacheUIData/**

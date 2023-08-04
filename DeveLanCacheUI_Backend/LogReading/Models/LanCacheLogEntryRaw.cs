@@ -1,6 +1,4 @@
-﻿using System.Globalization;
-
-namespace DeveLanCacheUI_Backend.LogReading.Models
+﻿namespace DeveLanCacheUI_Backend.LogReading.Models
 {
     public class LanCacheLogEntryRaw
     {

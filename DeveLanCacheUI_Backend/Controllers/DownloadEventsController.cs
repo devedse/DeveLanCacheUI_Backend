@@ -1,11 +1,3 @@
-using DeveLanCacheUI_Backend.Controllers.Models;
-using DeveLanCacheUI_Backend.Db;
-using DeveLanCacheUI_Backend.Db.DbModels;
-using DeveLanCacheUI_Backend.Steam;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Polly;
-
 namespace DeveLanCacheUI_Backend.Controllers
 {
     [ApiController]
@@ -43,7 +35,7 @@ namespace DeveLanCacheUI_Backend.Controllers
             tmpResult = tmpResult.Where(t => t.CacheHitBytes != 0 || t.CacheMissBytes != 0);
 
             var query = from downloadEvent in tmpResult
-                        join steamDepot in _dbContext.SteamDepots on downloadEvent.DownloadIdentifier equals steamDepot.Id into steamDepotJoin
+                        join steamDepot in _dbContext.SteamDepots on downloadEvent.DownloadIdentifier equals (int)steamDepot.Id into steamDepotJoin
                         from steamDepot in steamDepotJoin.DefaultIfEmpty()
                         let steamManifest = (from sm in _dbContext.SteamManifests
                                              where sm.DepotId == downloadEvent.DownloadIdentifier
@@ -57,8 +49,6 @@ namespace DeveLanCacheUI_Backend.Controllers
                             steamManifest
                         };
             query = query.Skip(skip).Take(count);
-
-            //var queryString = query.ToQueryString();
 
             var result = await query.ToListAsync();
 
@@ -76,19 +66,13 @@ namespace DeveLanCacheUI_Backend.Controllers
                     CacheHitBytes = item.downloadEvent.CacheHitBytes,
                     CacheMissBytes = item.downloadEvent.CacheMissBytes,
                     TotalBytes = (item.steamManifest?.TotalCompressedSize ?? 0) + (item.steamManifest?.ManifestBytesSize ?? 0),
-                    SteamDepot = item.steamDepot == null
-                        ? null
+                    SteamDepot = item.steamDepot == null ? null
                         : new SteamDepot
                         {
                             Id = item.steamDepot.Id,
                             SteamAppId = item.steamDepot.SteamAppId
                         }
                 };
-
-                if (downloadEvent.CacheIdentifier == "steam" && downloadEvent.SteamDepot != null)
-                {
-                    downloadEvent.SteamDepot.SteamApp = SteamApi.SteamApiData?.applist?.apps?.FirstOrDefault(t => t?.appid == downloadEvent.SteamDepot.SteamAppId);
-                }
 
                 return downloadEvent;
             }).ToList();

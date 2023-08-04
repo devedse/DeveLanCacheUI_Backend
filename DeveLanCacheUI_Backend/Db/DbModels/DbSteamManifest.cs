@@ -1,6 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-
-namespace DeveLanCacheUI_Backend.Db.DbModels
+﻿namespace DeveLanCacheUI_Backend.Db.DbModels
 {
     [PrimaryKey(nameof(DepotId), nameof(CreationTime))]
     [Index(nameof(UniqueManifestIdentifier), IsUnique = true)]

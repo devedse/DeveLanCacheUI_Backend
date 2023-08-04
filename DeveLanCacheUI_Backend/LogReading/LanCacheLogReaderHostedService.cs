@@ -1,13 +1,4 @@
-﻿using DeveLanCacheUI_Backend.Db;
-using DeveLanCacheUI_Backend.Db.DbModels;
-using DeveLanCacheUI_Backend.Hubs;
-using DeveLanCacheUI_Backend.LogReading.Models;
-using DeveLanCacheUI_Backend.Steam;
-using DeveLanCacheUI_Backend.SteamProto;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
-using Polly;
-using System.Text;
+﻿using DbContext = DeveLanCacheUI_Backend.Db.DeveLanCacheUIDbContext;
 
 namespace DeveLanCacheUI_Backend.LogReading
 {
@@ -22,6 +13,35 @@ namespace DeveLanCacheUI_Backend.LogReading
         private readonly IHubContext<LanCacheHub> _lanCacheHubContext;
         private readonly SteamManifestService _steamManifestService;
         private readonly ILogger<LanCacheLogReaderHostedService> _logger;
+
+        /// <summary>
+        /// These app ids will be excluded from processing as they introduce a lot of noise in the logs.
+        /// These are primarily the "Direct X Runtime" and ".NET Runtime" installers that are shared by nearly
+        /// every single game on Steam.  Since they're so small and so frequent, excluding them should make the
+        /// remaining logs far more usable.
+        /// </summary>
+        private readonly HashSet<string> ExcludedAppIds = new HashSet<string>()
+        {
+            "229033",
+            "229000",
+            "229001",
+            "229002",
+            "229003",
+            "229004",
+            "229005",
+            "229006",
+            "229007",
+            "228981",
+            "228982",
+            "228983",
+            "228984",
+            "228985",
+            "228986",
+            "228987",
+            "228988",
+            "228989",
+            "228990"
+        };
 
         public LanCacheLogReaderHostedService(IServiceProvider services,
             IConfiguration configuration,
@@ -39,9 +59,6 @@ namespace DeveLanCacheUI_Backend.LogReading
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
-
-            await SimpleSteamDataSeeder.GoSeed(_services);
-
             await GoRun(stoppingToken);
         }
 
@@ -50,7 +67,7 @@ namespace DeveLanCacheUI_Backend.LogReading
             var oldestLog = DateTime.MinValue;
             await using (var scope = _services.CreateAsyncScope())
             {
-                using var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();
+                using var dbContext = scope.ServiceProvider.GetRequiredService<DbContext>();
                 var lastUpdatedItem = await dbContext.DownloadEvents.OrderByDescending(t => t.LastUpdatedAt).FirstOrDefaultAsync();
                 if (lastUpdatedItem != null)
                 {
@@ -65,37 +82,31 @@ namespace DeveLanCacheUI_Backend.LogReading
             }
             var accessLogFilePath = Path.Combine(logFilePath, "access.log");
 
-
             var allLogLines = TailFrom2(accessLogFilePath, stoppingToken);
             var parsedLogLines = allLogLines.Select(t => t == null ? null : LanCacheLogLineParser.ParseLogEntry(t));
-            var batches = Batch2(parsedLogLines, 1000, oldestLog);
+            var batches = Batch2(parsedLogLines, 5000, oldestLog);
 
             int totalLinesProcessed = 0;
 
             foreach (var currentSet in batches)
             {
-                //parsedLogLines = parsedLogLines
-                //    .Where(t => t == null || t.DateTime > oldestLog)
-                //    .Take(1000)
-                //    .TakeWhile(t => t != null);
-                Console.WriteLine($"Processing {currentSet.Count} lines... First DateTime: {currentSet.FirstOrDefault()?.DateTime} (Total processed: {totalLinesProcessed})");
+                _logger.LogInformation("Processing {count} lines... First DateTime: {firstDate} (Total processed: {totalLinesProcessed})", 
+                    currentSet.Count, currentSet.FirstOrDefault()?.DateTime, totalLinesProcessed);
                 totalLinesProcessed += currentSet.Count;
 
                 await using (var scope = _services.CreateAsyncScope())
                 {
-
-
                     var retryPolicy = Policy
                         .Handle<DbUpdateException>()
                         .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                         (exception, timeSpan, context) =>
                         {
-                            Console.WriteLine($"An error occurred while trying to save changes: {exception.Message}");
+                            _logger.LogError($"An error occurred while trying to save changes: {exception.Message}");
                         });
 
                     await retryPolicy.ExecuteAsync(async () =>
                     {
-                        using var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();
+                        using var dbContext = scope.ServiceProvider.GetRequiredService<DbContext>();
 
                         //var filteredLogLines = currentSet.Where(t => t.CacheIdentifier == "steam");
                         IEnumerable<LanCacheLogEntryRaw> filteredLogLines = currentSet;
@@ -106,9 +117,13 @@ namespace DeveLanCacheUI_Backend.LogReading
 
                         foreach (var lanCacheLogLine in filteredLogLines)
                         {
+                            if (lanCacheLogLine.CacheIdentifier == "steam" && ExcludedAppIds.Contains(lanCacheLogLine.DownloadIdentifier))
+                            {
+                                continue;
+                            }
                             if (lanCacheLogLine.CacheIdentifier == "steam" && lanCacheLogLine.Request.Contains("/manifest/") && DateTime.Now < lanCacheLogLine.DateTime.AddDays(14))
                             {
-                                Console.WriteLine($"Found manifest for Depot: {lanCacheLogLine.DownloadIdentifier}");
+                                _logger.LogInformation($"Found manifest for Depot: {lanCacheLogLine.DownloadIdentifier}");
                                 var ttt = lanCacheLogLine;
                                 _steamManifestService.TryToDownloadManifest(ttt);
                             }
@@ -133,7 +148,7 @@ namespace DeveLanCacheUI_Backend.LogReading
 
                             if (cachedEvent == null || !(cachedEvent.LastUpdatedAt > lanCacheLogLine.DateTime.AddMinutes(-5)))
                             {
-                                Console.WriteLine($"Adding new event because more then 5 minutes no update: {cacheKey} ({lanCacheLogLine.DateTime})");
+                                _logger.LogInformation($"Adding new event because more then 5 minutes no update: {cacheKey} ({lanCacheLogLine.DateTime})");
 
                                 int.TryParse(lanCacheLogLine.DownloadIdentifier, out var downloadIdentifierInt);
                                 cachedEvent = new DbDownloadEvent()
@@ -189,7 +204,7 @@ namespace DeveLanCacheUI_Backend.LogReading
                         //Only log once in 30 times
                         if (dontLogForSpecificCounter % 30 == 0)
                         {
-                            Console.WriteLine($"{DateTime.Now} No new log lines, waiting...");
+                            _logger.LogInformation($"{DateTime.Now} No new log lines, waiting...");
                         }
                         dontLogForSpecificCounter++;
                         Thread.Sleep(1000);
@@ -210,7 +225,7 @@ namespace DeveLanCacheUI_Backend.LogReading
                     skipCounter++;
                     if (skipCounter % 1000 == 0)
                     {
-                        Console.WriteLine($"Skipped total of {skipCounter} lines (already processed)");
+                        _logger.LogInformation($"Skipped total of {skipCounter} lines (already processed)");
                     }
                 }
             }
