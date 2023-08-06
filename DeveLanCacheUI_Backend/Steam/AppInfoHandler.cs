@@ -8,7 +8,7 @@
     public class AppInfoHandler
     {
         private readonly Steam3Session _steam3Session;
-        
+
         /// <summary>
         /// A dictionary of all app metadata currently retrieved from Steam
         /// </summary>
@@ -19,15 +19,13 @@
             _steam3Session = steam3Session;
         }
 
-        #region Loading Metadata
-
         /// <summary>
         /// Gets the latest app metadata from steam, for the specified apps, as well as their related DLC apps
         /// </summary>
         public async Task<List<AppInfo>> RetrieveAppMetadataAsync(List<uint> appIds)
         {
             await BulkLoadAppInfoAsync(appIds);
-            
+
             // Once we have loaded all the apps, we can also load information for related DLC
             await FetchDlcAppInfoAsync();
 
@@ -88,7 +86,7 @@
 
             // Finally request the metadata from steam
             var resultSet = await _steam3Session.SteamAppsApi.PICSGetProductInfo(requests, new List<SteamApps.PICSRequest>()).ToTask();
-            
+
             List<PicsProductInfo> appInfos = resultSet.Results.SelectMany(e => e.Apps)
                                                       .Select(e => e.Value)
                                                       .ToList();
@@ -141,8 +139,6 @@
                 app.Depots.AddRange(distinctDepots);
             }
         }
-
-        #endregion
 
         /// <summary>
         /// Will return an AppInfo for the specified AppId, that contains various metadata about the app.

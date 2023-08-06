@@ -8,6 +8,6 @@ namespace DeveLanCacheUI_Backend.Db.DbModels
         public uint SteamAppId { get; set; }
 
         [ForeignKey(nameof(SteamAppId))]
-        public SteamAppInfo OwningApp { get; set; } 
+        public DbSteamAppInfo OwningApp { get; set; } 
     }
 }

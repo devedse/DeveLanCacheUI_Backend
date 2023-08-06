@@ -9,12 +9,12 @@
         private readonly IServiceProvider _services;
 
         public SteamAppInfoService(ILogger<SteamAppInfoService> logger, Steam3Session steam3Session, AppInfoHandler appInfoHandler, 
-            IServiceProvider _services)
+            IServiceProvider services)
         {
             _logger = logger;
             _steam3Session = steam3Session;
             _appInfoHandler = appInfoHandler;
-            this._services = _services;
+            _services = services;
         }
         
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -63,7 +63,7 @@
                     // Persisting to DB
                     using var scope = _services.CreateAsyncScope();
                     using var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();
-                    var models = appInfos.Select(e => new SteamAppInfo
+                    var models = appInfos.Select(e => new DbSteamAppInfo
                     {
                         AppId = e.AppId,
                         Name = e.Name ?? "",
@@ -116,7 +116,7 @@
         {
             using var scope = _services.CreateAsyncScope();
             using var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();
-            return dbContext.SteamApps.Select(e => e.AppId).ToHashSet();
+            return dbContext.SteamApps.AsNoTracking().Select(e => e.AppId).ToHashSet();
         }
 
         //TODO comment

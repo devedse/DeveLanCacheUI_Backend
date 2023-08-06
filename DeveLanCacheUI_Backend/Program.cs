@@ -1,3 +1,5 @@
+using DeveLanCacheUI_Backend.Services.OriginalDepotEnricher;
+
 namespace DeveLanCacheUI_Backend
 {
     public class Program
@@ -63,16 +65,25 @@ namespace DeveLanCacheUI_Backend
 
             //TODO this guy is using up a ton of ram at idle.  ~600mb
             builder.Services.AddHostedService<LanCacheLogReaderHostedService>();
-            builder.Services.AddHostedService<SteamAppInfoService>();
 
             builder.Services.AddHttpClient();
 
             builder.Services.AddSingleton<RoboHashCache>();
             builder.Services.AddSingleton<SteamManifestService>();
 
-            //TODO should probably initialize the Steam session here rather than inside the service
-            builder.Services.AddSingleton<Steam3Session>();
-            builder.Services.AddSingleton<AppInfoHandler>();
+            if (deveLanCacheConfiguration.UseDirectSteamIntegrationForDepots)
+            {
+                builder.Services.AddHostedService<SteamAppInfoService>();
+
+                //TODO should probably initialize the Steam session here rather than inside the service
+                builder.Services.AddSingleton<Steam3Session>();
+                builder.Services.AddSingleton<AppInfoHandler>();
+            }
+            else
+            {
+                builder.Services.AddHostedService<SteamDepotEnricherHostedService>();
+                builder.Services.AddHostedService<SteamDepotDownloaderHostedService>();
+            }
 
             builder.Services.AddSignalR();
             builder.Services.AddResponseCompression(opts =>
@@ -93,32 +104,6 @@ namespace DeveLanCacheUI_Backend
                     });
             });
 
-            // Configure Logging
-            Logger logger = new LoggerConfiguration()
-                .MinimumLevel.Information()
-                // Spams annoying messages from aspnet core that don't add any real useful info
-                .MinimumLevel.Override("Microsoft.AspNetCore.Hosting.Diagnostics", LogEventLevel.Warning)
-                .MinimumLevel.Override("Microsoft.AspNetCore.Routing", LogEventLevel.Warning)
-                .MinimumLevel.Override("Microsoft.AspNetCore.Mvc.Infrastructure.ObjectResultExecutor", LogEventLevel.Warning)
-                .MinimumLevel.Override("Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker", LogEventLevel.Warning)
-                .MinimumLevel.Override("System.Net.Http.HttpClient.Default.ClientHandler", LogEventLevel.Warning)
-                .MinimumLevel.Override("System.Net.Http.HttpClient.Default.LogicalHandler", LogEventLevel.Warning)
-                .MinimumLevel.Override("Microsoft.AspNetCore.Cors", LogEventLevel.Warning)
-                // Hides Entity Framework generated queries being written to console
-                .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", LogEventLevel.Warning)
-                .Enrich.FromLogContext()
-                // Includes service/class name so that its easier to underestand whats going on
-                .Enrich.WithComputed("SourceContextName", "Substring(SourceContext, LastIndexOf(SourceContext, '.') + 1)")
-                .WriteTo.Console(LogEventLevel.Information, outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContextName}] {Message:lj}{NewLine}{Exception}")
-                .CreateLogger();
-
-            builder.Services.AddLogging(l =>
-            {
-                
-                l.ClearProviders();
-                l.AddSerilog(logger, true);
-            });
-
             var app = builder.Build();
 
             app.UseResponseCompression();
@@ -129,7 +114,7 @@ namespace DeveLanCacheUI_Backend
                 var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();
                 Console.WriteLine("Migrating DB (ensure the database folder from the query string exists)...");
                 dbContext.Database.Migrate();
-                logger.Information("DB migration completed");
+                Console.WriteLine("DB migration completed");
             }
 
             //Redirect to /swagger
@@ -152,7 +137,7 @@ namespace DeveLanCacheUI_Backend
 
             app.MapHub<ChatHub>("/chathub");
             app.MapHub<LanCacheHub>("/lancachehub");
-            
+
             app.Run();
         }
     }

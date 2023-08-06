@@ -1,6 +1,6 @@
 ﻿namespace DeveLanCacheUI_Backend.Db.DbModels
 {
-    public class SteamAppInfo
+    public class DbSteamAppInfo
     {
         [Key]
         public uint AppId { get; set; }
