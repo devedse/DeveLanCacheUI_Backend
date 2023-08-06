@@ -6,8 +6,11 @@ namespace DeveLanCacheUI_Backend
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            var deveLanCacheConfiguration = builder.Configuration.Get<DeveLanCacheConfiguration>()!;
+            builder.Services.AddSingleton<DeveLanCacheConfiguration>(deveLanCacheConfiguration);
+
             // Add services to the container.
-            var deveLanCacheUIDataDirectory = builder.Configuration.GetValue<string>("DeveLanCacheUIDataDirectory");
+            var deveLanCacheUIDataDirectory = deveLanCacheConfiguration.DeveLanCacheUIDataDirectory;
             if (deveLanCacheUIDataDirectory != null)
             {
                 Directory.CreateDirectory(deveLanCacheUIDataDirectory);
