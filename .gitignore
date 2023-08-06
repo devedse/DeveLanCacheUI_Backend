@@ -400,6 +400,4 @@ FodyWeavers.xsd
 /DeveLanCacheUI_Backend/develancacheui.db
 /DeveLanCacheUI_Backend/develancacheui.db-shm
 /DeveLanCacheUI_Backend/develancacheui.db-wal
-DeveLanCacheUIData/DeveLanCacheUI_Backend/Assets/processed
-/DeveLanCacheUI_Backend/Assets/processed
-/DeveLanCacheUI_Backend/DeveLanCacheUIData/**
+DeveLanCacheUIData
