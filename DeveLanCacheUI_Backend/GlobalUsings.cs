@@ -1,5 +1,4 @@
 // Global using directives
-// Global using directives
 global using DeveHashImageGenerator.RoboHash;
 global using DeveLanCacheUI_Backend.Controllers.Models;
 global using DeveLanCacheUI_Backend.Db;
@@ -10,12 +9,12 @@ global using DeveLanCacheUI_Backend.Hubs;
 global using DeveLanCacheUI_Backend.LogReading;
 global using DeveLanCacheUI_Backend.LogReading.Models;
 global using DeveLanCacheUI_Backend.Services;
+global using DeveLanCacheUI_Backend.Services.OriginalDepotEnricher;
 global using DeveLanCacheUI_Backend.Status;
 global using DeveLanCacheUI_Backend.Steam;
 global using DeveLanCacheUI_Backend.Steam.Exceptions;
 global using DeveLanCacheUI_Backend.Steam.Models;
 global using DeveLanCacheUI_Backend.Steam.SteamProto;
-global using JetBrains.Annotations;
 global using Microsoft.AspNetCore.Mvc;
 global using Microsoft.AspNetCore.ResponseCompression;
 global using Microsoft.AspNetCore.Rewrite;
@@ -24,9 +23,6 @@ global using Microsoft.Data.Sqlite;
 global using Microsoft.EntityFrameworkCore;
 global using Microsoft.Extensions.Caching.Memory;
 global using Polly;
-global using Serilog;
-global using Serilog.Core;
-global using Serilog.Events;
 global using SixLabors.ImageSharp;
 global using SteamKit2;
 global using SteamKit2.CDN;
