@@ -1,4 +1,6 @@
-﻿namespace DeveLanCacheUI_Backend.Services.OriginalDepotEnricher
+﻿using SteamKit2;
+
+namespace DeveLanCacheUI_Backend.Services.OriginalDepotEnricher
 {
     public class SteamDepotEnricherHostedService : BackgroundService
     {
@@ -100,12 +102,16 @@
                                     }
                                     else
                                     {
-                                        //Console.WriteLine("Warning: Duplicate depotId found, skipping");
+                                        Console.WriteLine("Warning: Duplicate depotId found, skipping");
                                     }
                                 }
                             }
 
                             Console.WriteLine($"Depot File {firstFile} read. Adding {depotToAppDict.Count} entries to db...");
+
+
+
+
 
 
 
@@ -133,6 +139,16 @@
                                         int newDepots = 0;
                                         foreach (var depotId in currentBatch)
                                         {
+                                            var appId = depotToAppDict[depotId];
+
+                                            var app = await dbContext.SteamApps.FirstOrDefaultAsync(t => t.AppId == appId);
+                                            if (app == null)
+                                            {
+                                                app = new DbSteamAppInfo { AppId = appId };
+                                                Console.WriteLine($"Adding: {appId}");
+                                                dbContext.SteamApps.Add(app);
+                                            }
+
                                             // Insert or update using Polly's retry policy
                                             var depot = await dbContext.SteamDepots.FirstOrDefaultAsync(d => d.Id == depotId);
                                             if (depot == null)
@@ -143,7 +159,7 @@
                                                 newDepots++;
                                             }
                                             //Link the depot to the existing app
-                                            depot.SteamAppId = depotToAppDict[depotId];
+                                            depot.SteamAppId = appId;
                                         }
                                         //Save changes
                                         await dbContext.SaveChangesAsync();

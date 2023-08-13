@@ -4,7 +4,6 @@
     /// Steam docs:
     /// https://partner.steamgames.com/doc/api/steam_api?#EAppType
     /// </summary>
-    [UsedImplicitly(ImplicitUseTargetFlags.Members)]
     public class AppType : EnumBase<AppType>
     {
         public static readonly AppType Application = new AppType("application");
