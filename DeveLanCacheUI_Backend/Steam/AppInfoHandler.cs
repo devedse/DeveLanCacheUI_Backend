@@ -37,20 +37,21 @@
 
         public async Task<List<SteamDepotEnricherCSVModel>> BulkLoadAppInfoAsync(List<uint> appIds)
         {
-            var filteredAppIds = appIds.Distinct().ToList();
+            return await AppInfoRequestAsync(appIds);
+            //var filteredAppIds = appIds.Distinct().ToList();
 
-            // Breaking into at most 10 concurrent batches
-            int batchSize = (filteredAppIds.Count / 5) + 1;
-            var batches = filteredAppIds.Chunk(batchSize).ToList();
+            //// Breaking into at most 10 concurrent batches
+            //int batchSize = (filteredAppIds.Count / 5) + 1;
+            //var batches = filteredAppIds.Chunk(batchSize).ToList();
 
-            var total = new List<SteamDepotEnricherCSVModel>();
-            foreach (var batch in batches)
-            {
-                var res = await AppInfoRequestAsync(batch.ToList());
-                total.AddRange(res);
-            }
+            //var total = new List<SteamDepotEnricherCSVModel>();
+            //foreach (var batch in batches)
+            //{
+            //    var res = await AppInfoRequestAsync(batch.ToList());
+            //    total.AddRange(res);
+            //}
 
-            return total;
+            //return total;
 
             //// Breaking the request into smaller batches that complete faster
             //var batchJobs = new List<Task>();
@@ -59,8 +60,8 @@
             //    batchJobs.Add(AppInfoRequestAsync(batch.ToList()));
             //}
 
-                //await Task.WhenAll(batchJobs);
-                //_ansiConsole.LogMarkupVerbose($"Loaded metadata for {Magenta(filteredAppIds.Count)} apps", initialAppIdLoadTimer);
+            //await Task.WhenAll(batchJobs);
+            //_ansiConsole.LogMarkupVerbose($"Loaded metadata for {Magenta(filteredAppIds.Count)} apps", initialAppIdLoadTimer);
         }
 
         /// <summary>
@@ -155,7 +156,12 @@
             //    LoadedAppInfos.TryAdd(unknownAppId, new AppInfo(unknownAppId, "Unknown"));
             //}
 
-            return toReturn;
+            var toReturn2 = toReturn
+                .GroupBy(p => new { p.SteamAppId, p.SteamDepotId })
+                .Select(g => g.First())
+                .ToList();
+
+            return toReturn2;
         }
 
         ///// <summary>

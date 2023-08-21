@@ -141,6 +141,7 @@
                         _logger.LogWarning($"An error occurred while trying to save changes: {exception.Message}");
                     });
 
+                int totalDepotsProcessed = 0;
 
                 //Batch operations in groups of 1000
                 for (int i = 0; i < changedApps.Count; i += 1000)
@@ -157,6 +158,8 @@
 
                             foreach (var depot in appInfos)
                             {
+                                totalDepotsProcessed++;
+
                                 // Insert or update using Polly's retry policy
                                 var dbDepot = await dbContext.SteamDepots.FirstOrDefaultAsync(d => d.SteamDepotId == depot.SteamDepotId && d.SteamAppId == depot.SteamAppId);
                                 if (dbDepot == null)
@@ -169,7 +172,7 @@
                             }
                             //Save changes
                             await dbContext.SaveChangesAsync();
-                            _logger.LogInformation($"Depots Processed: {i + currentBatch.Count}/{changedApps.Count}. Updated {currentBatch.Count - newDepots}, New {newDepots}");
+                            _logger.LogInformation($"Depots Processed: {totalDepotsProcessed}/???? Apps Processed: {i + currentBatch.Count}/{changedApps.Count}. Updated {appInfos.Count - newDepots}, New {newDepots}");
                         }
                     });
                 }
