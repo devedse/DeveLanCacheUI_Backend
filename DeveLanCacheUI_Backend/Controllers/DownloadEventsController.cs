@@ -80,7 +80,7 @@ namespace DeveLanCacheUI_Backend.Controllers
 
                 if (downloadEvent.CacheIdentifier == "steam" && downloadEvent.SteamDepot != null)
                 {
-                    downloadEvent.SteamDepot.SteamApp = SteamApi.SteamApiData?.applist?.apps?.FirstOrDefault(t => t?.appid == downloadEvent.SteamDepot.SteamAppId);
+                    downloadEvent.SteamDepot.SteamApp = _steamAppObtainerService.GetSteamAppById(downloadEvent.SteamDepot.SteamAppId);
                 }
 
                 return downloadEvent;
