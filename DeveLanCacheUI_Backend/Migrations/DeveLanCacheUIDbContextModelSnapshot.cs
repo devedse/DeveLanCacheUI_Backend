@@ -40,7 +40,7 @@ namespace DeveLanCacheUI_Backend.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("DownloadIdentifier")
+                    b.Property<uint?>("DownloadIdentifier")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("DownloadIdentifierString")
@@ -69,15 +69,13 @@ namespace DeveLanCacheUI_Backend.Migrations
 
             modelBuilder.Entity("DeveLanCacheUI_Backend.Db.DbModels.DbSteamDepot", b =>
                 {
-                    b.Property<uint>("Id")
+                    b.Property<uint>("SteamDepotId")
                         .HasColumnType("INTEGER");
 
                     b.Property<uint>("SteamAppId")
                         .HasColumnType("INTEGER");
 
-                    b.HasKey("Id", "SteamAppId");
-
-                    b.HasIndex("SteamAppId");
+                    b.HasKey("SteamDepotId", "SteamAppId");
 
                     b.ToTable("SteamDepots");
                 });
@@ -109,37 +107,6 @@ namespace DeveLanCacheUI_Backend.Migrations
                         .IsUnique();
 
                     b.ToTable("SteamManifests");
-                });
-
-            modelBuilder.Entity("DeveLanCacheUI_Backend.Db.DbModels.SteamAppInfo", b =>
-                {
-                    b.Property<uint>("AppId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("AppId");
-
-                    b.ToTable("SteamApps");
-                });
-
-            modelBuilder.Entity("DeveLanCacheUI_Backend.Db.DbModels.DbSteamDepot", b =>
-                {
-                    b.HasOne("DeveLanCacheUI_Backend.Db.DbModels.SteamAppInfo", "OwningApp")
-                        .WithMany("Depots")
-                        .HasForeignKey("SteamAppId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("OwningApp");
-                });
-
-            modelBuilder.Entity("DeveLanCacheUI_Backend.Db.DbModels.SteamAppInfo", b =>
-                {
-                    b.Navigation("Depots");
                 });
 #pragma warning restore 612, 618
         }
