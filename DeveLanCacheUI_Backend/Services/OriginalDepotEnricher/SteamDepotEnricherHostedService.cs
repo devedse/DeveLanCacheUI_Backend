@@ -129,6 +129,10 @@ namespace DeveLanCacheUI_Backend.Services.OriginalDepotEnricher
 
 
 
+
+
+
+
                             var retryPolicy = Policy
                                 .Handle<DbUpdateException>()
                                 .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
@@ -151,6 +155,16 @@ namespace DeveLanCacheUI_Backend.Services.OriginalDepotEnricher
                                         int newDepots = 0;
                                         foreach (var depot in currentBatch)
                                         {
+                                            var appId = depotToAppDict[depotId];
+
+                                            var app = await dbContext.SteamApps.FirstOrDefaultAsync(t => t.AppId == appId);
+                                            if (app == null)
+                                            {
+                                                app = new DbSteamAppInfo { AppId = appId };
+                                                Console.WriteLine($"Adding: {appId}");
+                                                dbContext.SteamApps.Add(app);
+                                            }
+
                                             // Insert or update using Polly's retry policy
                                             var dbDepot = await dbContext.SteamDepots.FirstOrDefaultAsync(d => d.SteamDepotId == depot.SteamDepotId && d.SteamAppId == depot.SteamAppId);
                                             if (dbDepot == null)
