@@ -1,3 +1,5 @@
+using DeveLanCacheUI_Backend.Services.OriginalDepotEnricher;
+
 namespace DeveLanCacheUI_Backend.Controllers
 {
     [ApiController]
@@ -5,11 +7,13 @@ namespace DeveLanCacheUI_Backend.Controllers
     public class DownloadEventsController : ControllerBase
     {
         private readonly DeveLanCacheUIDbContext _dbContext;
+        private readonly ISteamAppObtainerService _steamAppObtainerService;
         private readonly ILogger<DownloadEventsController> _logger;
 
-        public DownloadEventsController(DeveLanCacheUIDbContext dbContext, ILogger<DownloadEventsController> logger)
+        public DownloadEventsController(DeveLanCacheUIDbContext dbContext, ISteamAppObtainerService steamAppObtainerService, ILogger<DownloadEventsController> logger)
         {
             _dbContext = dbContext;
+            _steamAppObtainerService = steamAppObtainerService;
             _logger = logger;
         }
 
@@ -74,8 +78,15 @@ namespace DeveLanCacheUI_Backend.Controllers
                         }
                 };
 
+                if (downloadEvent.CacheIdentifier == "steam" && downloadEvent.SteamDepot != null)
+                {
+                    downloadEvent.SteamDepot.SteamApp = SteamApi.SteamApiData?.applist?.apps?.FirstOrDefault(t => t?.appid == downloadEvent.SteamDepot.SteamAppId);
+                }
+
                 return downloadEvent;
             }).ToList();
+
+
 
             return mappedResult;
         }

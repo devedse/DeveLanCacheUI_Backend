@@ -7,5 +7,6 @@
         public string? Value { get; set; }
 
         public const string SettingKey_DepotVersion = nameof(SettingKey_DepotVersion);
+        public const string SettingKey_SteamChangeNumber = nameof(SettingKey_SteamChangeNumber);
     }
 }

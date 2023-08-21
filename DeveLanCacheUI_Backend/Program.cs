@@ -78,11 +78,13 @@ namespace DeveLanCacheUI_Backend
                 //TODO should probably initialize the Steam session here rather than inside the service
                 builder.Services.AddSingleton<Steam3Session>();
                 builder.Services.AddSingleton<AppInfoHandler>();
+                builder.Services.AddSingleton<ISteamAppObtainerService, NewSteamAppObtainerService>();
             }
             else
             {
                 builder.Services.AddHostedService<SteamDepotEnricherHostedService>();
                 builder.Services.AddHostedService<SteamDepotDownloaderHostedService>();
+                builder.Services.AddSingleton<ISteamAppObtainerService, OriginalSteamAppObtainerService>();
             }
 
             builder.Services.AddSignalR();

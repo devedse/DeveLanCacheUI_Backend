@@ -2,7 +2,6 @@
 {
     public class DeveLanCacheUIDbContext : DbContext
     {
-        public DbSet<DbSteamAppInfo> SteamApps => Set<DbSteamAppInfo>();
         public DbSet<DbSteamDepot> SteamDepots => Set<DbSteamDepot>();
         public DbSet<DbDownloadEvent> DownloadEvents => Set<DbDownloadEvent>();
         public DbSet<DbSetting> Settings => Set<DbSetting>();
@@ -17,13 +16,8 @@
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Entity<DbSteamAppInfo>()
-                        .HasMany(p => p.Depots)        
-                        .WithOne(c => c.OwningApp)         
-                        .HasForeignKey(c => c.SteamAppId);
-
             modelBuilder.Entity<DbSteamDepot>()
-                        .HasKey(pc => new { pc.Id, pc.SteamAppId });
+                        .HasKey(pc => new { pc.SteamDepotId, pc.SteamAppId });
         }
     }
 }

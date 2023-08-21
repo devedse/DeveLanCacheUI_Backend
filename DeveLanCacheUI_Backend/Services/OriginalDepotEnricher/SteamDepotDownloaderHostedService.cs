@@ -1,4 +1,6 @@
-﻿namespace DeveLanCacheUI_Backend.Services.OriginalDepotEnricher
+﻿using DeveLanCacheUI_Backend.Services.OriginalDepotEnricher.Models;
+
+namespace DeveLanCacheUI_Backend.Services.OriginalDepotEnricher
 {
     public class SteamDepotDownloaderHostedService : BackgroundService
     {
