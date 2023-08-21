@@ -12,7 +12,7 @@
 
     public class App
     {
-        public int appid { get; set; }
+        public uint appid { get; set; }
         public string name { get; set; }
     }
 

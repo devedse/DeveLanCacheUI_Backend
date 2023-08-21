@@ -142,7 +142,6 @@
                             //var depotList = depotToAppDict.Keys.ToList();
 
                             //Batch operations in groups of 1000
-                            //Batch operations in groups of 1000
                             for (int i = 0; i < desiredSteamAppToDepots.Count; i += 1000)
                             {
                                 await retryPolicy.ExecuteAsync(async () =>
