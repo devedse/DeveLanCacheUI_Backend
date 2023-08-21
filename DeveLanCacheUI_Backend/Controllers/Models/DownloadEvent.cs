@@ -7,7 +7,7 @@
         //steam/epicgames/wsus/epicgames
         public string CacheIdentifier { get; set; }
 
-        public int? DownloadIdentifier { get; set; }
+        public uint? DownloadIdentifier { get; set; }
         public string? DownloadIdentifierString { get; set; }
 
         public required string ClientIp { get; set; }

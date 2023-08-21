@@ -73,7 +73,7 @@ namespace DeveLanCacheUI_Backend.Controllers
                     SteamDepot = item.steamDepot == null ? null
                         : new SteamDepot
                         {
-                            Id = item.steamDepot.Id,
+                            Id = item.steamDepot.SteamDepotId,
                             SteamAppId = item.steamDepot.SteamAppId
                         }
                 };

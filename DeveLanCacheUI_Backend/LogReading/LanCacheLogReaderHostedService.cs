@@ -150,7 +150,7 @@ namespace DeveLanCacheUI_Backend.LogReading
                             {
                                 _logger.LogInformation($"Adding new event because more then 5 minutes no update: {cacheKey} ({lanCacheLogLine.DateTime})");
 
-                                int.TryParse(lanCacheLogLine.DownloadIdentifier, out var downloadIdentifierInt);
+                                uint.TryParse(lanCacheLogLine.DownloadIdentifier, out var downloadIdentifierInt);
                                 cachedEvent = new DbDownloadEvent()
                                 {
                                     CacheIdentifier = lanCacheLogLine.CacheIdentifier,
