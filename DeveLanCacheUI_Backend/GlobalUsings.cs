@@ -10,6 +10,7 @@ global using DeveLanCacheUI_Backend.LogReading;
 global using DeveLanCacheUI_Backend.LogReading.Models;
 global using DeveLanCacheUI_Backend.Services;
 global using DeveLanCacheUI_Backend.Services.OriginalDepotEnricher;
+global using DeveLanCacheUI_Backend.Services.OriginalDepotEnricher.Models;
 global using DeveLanCacheUI_Backend.Status;
 global using DeveLanCacheUI_Backend.Steam;
 global using DeveLanCacheUI_Backend.Steam.Exceptions;

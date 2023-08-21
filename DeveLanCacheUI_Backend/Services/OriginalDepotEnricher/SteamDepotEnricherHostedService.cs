@@ -1,6 +1,4 @@
-﻿using DeveLanCacheUI_Backend.Services.OriginalDepotEnricher.Models;
-
-namespace DeveLanCacheUI_Backend.Services.OriginalDepotEnricher
+﻿namespace DeveLanCacheUI_Backend.Services.OriginalDepotEnricher
 {
     public class SteamDepotEnricherHostedService : BackgroundService
     {
@@ -25,7 +23,7 @@ namespace DeveLanCacheUI_Backend.Services.OriginalDepotEnricher
             await GoRun(stoppingToken);
         }
 
-        
+
 
         private async Task GoRun(CancellationToken stoppingToken)
         {
@@ -144,6 +142,7 @@ namespace DeveLanCacheUI_Backend.Services.OriginalDepotEnricher
                             //var depotList = depotToAppDict.Keys.ToList();
 
                             //Batch operations in groups of 1000
+                            //Batch operations in groups of 1000
                             for (int i = 0; i < desiredSteamAppToDepots.Count; i += 1000)
                             {
                                 await retryPolicy.ExecuteAsync(async () =>
@@ -155,16 +154,6 @@ namespace DeveLanCacheUI_Backend.Services.OriginalDepotEnricher
                                         int newDepots = 0;
                                         foreach (var depot in currentBatch)
                                         {
-                                            var appId = depotToAppDict[depotId];
-
-                                            var app = await dbContext.SteamApps.FirstOrDefaultAsync(t => t.AppId == appId);
-                                            if (app == null)
-                                            {
-                                                app = new DbSteamAppInfo { AppId = appId };
-                                                Console.WriteLine($"Adding: {appId}");
-                                                dbContext.SteamApps.Add(app);
-                                            }
-
                                             // Insert or update using Polly's retry policy
                                             var dbDepot = await dbContext.SteamDepots.FirstOrDefaultAsync(d => d.SteamDepotId == depot.SteamDepotId && d.SteamAppId == depot.SteamAppId);
                                             if (dbDepot == null)

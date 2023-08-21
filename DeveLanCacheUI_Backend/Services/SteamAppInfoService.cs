@@ -41,10 +41,11 @@
             List<uint> allKnownAppIds = await RetrieveAllAppIds2();
 
             // Filter out any app ids that have been previously processed
-            var previouslyProcessedIds = PreviouslyProcessedAppIds();
-            var appIdsToProcess = allKnownAppIds.Where(e => !previouslyProcessedIds.Contains(e))
-                                                .OrderBy(e => e)
-                                                .ToList();
+            //var previouslyProcessedIds = PreviouslyProcessedAppIds();
+            //var appIdsToProcess = allKnownAppIds.Where(e => !previouslyProcessedIds.Contains(e))
+            //                                    .OrderBy(e => e)
+            //                                    .ToList();
+            var appIdsToProcess = allKnownAppIds;
 
             var chunkSize = 1000;
             var batches = appIdsToProcess.Chunk(chunkSize).ToList();
@@ -60,20 +61,20 @@
                     // Retrieving app info
                     var appInfos = await _appInfoHandler.RetrieveAppMetadataAsync(currentBatch);
 
-                    // Persisting to DB
-                    using var scope = _services.CreateAsyncScope();
-                    using var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();
-                    var models = appInfos.Select(e => new DbSteamAppInfo
-                    {
-                        AppId = e.AppId,
-                        Name = e.Name ?? "",
-                        Depots = e.Depots.Select(e => new DbSteamDepot
-                        {
-                            Id = e.DepotId
-                        }).ToList()
-                    });
-                    dbContext.AddRange(models);
-                    dbContext.SaveChanges();
+                    //// Persisting to DB
+                    //using var scope = _services.CreateAsyncScope();
+                    //using var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();
+                    //var models = appInfos.Select(e => new DbSteamAppInfo
+                    //{
+                    //    AppId = e.AppId,
+                    //    Name = e.Name ?? "",
+                    //    Depots = e.Depots.Select(e => new DbSteamDepot
+                    //    {
+                    //        Id = e.DepotId
+                    //    }).ToList()
+                    //});
+                    //dbContext.AddRange(models);
+                    //dbContext.SaveChanges();
 
                     // If successful pop it from the list of jobs
                     batches.RemoveAt(0);
@@ -112,12 +113,12 @@
             }
         }
 
-        private HashSet<uint> PreviouslyProcessedAppIds()
-        {
-            using var scope = _services.CreateAsyncScope();
-            using var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();
-            return dbContext.SteamApps.AsNoTracking().Select(e => e.AppId).ToHashSet();
-        }
+        //private HashSet<uint> PreviouslyProcessedAppIds()
+        //{
+        //    using var scope = _services.CreateAsyncScope();
+        //    using var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();
+        //    return dbContext.SteamApps.AsNoTracking().Select(e => e.AppId).ToHashSet();
+        //}
 
         //TODO comment
         public async Task<List<uint>> RetrieveAllAppIds2()

@@ -39,7 +39,7 @@ namespace DeveLanCacheUI_Backend.Controllers
             tmpResult = tmpResult.Where(t => t.CacheHitBytes != 0 || t.CacheMissBytes != 0);
 
             var query = from downloadEvent in tmpResult
-                        join steamDepot in _dbContext.SteamDepots on downloadEvent.DownloadIdentifier equals (int)steamDepot.Id into steamDepotJoin
+                        join steamDepot in _dbContext.SteamDepots on downloadEvent.DownloadIdentifier equals steamDepot.SteamDepotId into steamDepotJoin
                         from steamDepot in steamDepotJoin.DefaultIfEmpty()
                         let steamManifest = (from sm in _dbContext.SteamManifests
                                              where sm.DepotId == downloadEvent.DownloadIdentifier
