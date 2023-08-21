@@ -105,12 +105,12 @@
 
         private async Task WatchForAppUpdates(CancellationToken stoppingToken)
         {
-            uint previousChangeNumber = 0;
             _logger.LogInformation("Loading latest app changes....");
-            //await Task.Delay(60_000, stoppingToken);
 
             while (!stoppingToken.IsCancellationRequested)
             {
+                uint previousChangeNumber = _currentChangeNumber;
+
                 List<uint> changedApps = new List<uint>();
                 if (_currentChangeNumber == 0)
                 {
