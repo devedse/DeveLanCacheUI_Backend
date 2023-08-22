@@ -158,6 +158,11 @@
 
                             foreach (var depot in appInfos)
                             {
+                                if (!string.IsNullOrWhiteSpace(depot.SteamAppName))
+                                {
+                                    _logger.LogTrace("Updating depot mapping for app " + depot.SteamAppName + " with id " + depot.SteamAppId + " and depot " + depot.SteamDepotId);
+                                }
+
                                 totalDepotsProcessed++;
 
                                 // Insert or update using Polly's retry policy

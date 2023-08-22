@@ -139,7 +139,7 @@
                             var csv = new SteamDepotEnricherCSVModel()
                             {
                                 SteamAppId = a.Key,
-                                SteamAppName = "",
+                                SteamAppName = a.Value.KeyValues["common"]?["name"]?.AsString() ?? "",
                                 SteamDepotId = depotUint
                             };
 
