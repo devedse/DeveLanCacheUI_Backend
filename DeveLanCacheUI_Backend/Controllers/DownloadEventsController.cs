@@ -54,46 +54,8 @@ namespace DeveLanCacheUI_Backend.Controllers
                             steamDepot,
                             steamManifest
                         };
-            /*
-                        var queryString = query.ToQueryString();
 
-                        var result = await query.ToListAsync();
-
-                        var groupedResult = result.GroupBy(t => t.downloadEvent);
-
-                        var mappedResult = groupedResult.Select(item =>
-                        {
-                            var firstSteamDepot = item.steamDepot;
-
-                            var downloadEvent = new DownloadEvent
-                            {
-                                Id = item.Key.Id,
-                                CacheIdentifier = item.Key.CacheIdentifier,
-                                DownloadIdentifier = item.Key.DownloadIdentifier,
-                                DownloadIdentifierString = item.Key.DownloadIdentifierString,
-                                ClientIp = item.Key.ClientIp,
-                                CreatedAt = item.Key.CreatedAt,
-                                LastUpdatedAt = item.Key.LastUpdatedAt,
-                                CacheHitBytes = item.Key.CacheHitBytes,
-                                CacheMissBytes = item.Key.CacheMissBytes,
-                                TotalBytes = (item.steamManifest?.TotalCompressedSize ?? 0) + (item.steamManifest?.ManifestBytesSize ?? 0),
-                                SteamDepot = firstSteamDepot == null || item.downloadEvent.CacheIdentifier != "steam" ? null
-                                    : new SteamDepot
-                                    {
-                                        Id = firstSteamDepot.SteamDepotId,
-                                        SteamAppId = firstSteamDepot.SteamAppId
-                                    }
-                            };
-
-                            if (downloadEvent.CacheIdentifier == "steam" && downloadEvent.SteamDepot != null)
-                            {
-                                downloadEvent.SteamDepot.SteamApp = _steamAppObtainerService.GetSteamAppById(downloadEvent.SteamDepot.SteamAppId);
-                            }
-
-                            return downloadEvent;
-                        }).ToList();
-            */
-            var queryString = query.ToQueryString();
+            //var queryString = query.ToQueryString();
 
             var result = await query.ToListAsync();
 
