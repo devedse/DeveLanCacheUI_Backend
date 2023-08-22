@@ -82,7 +82,7 @@ namespace DeveLanCacheUI_Backend.Migrations
 
             modelBuilder.Entity("DeveLanCacheUI_Backend.Db.DbModels.DbSteamManifest", b =>
                 {
-                    b.Property<int>("DepotId")
+                    b.Property<uint>("DepotId")
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("CreationTime")

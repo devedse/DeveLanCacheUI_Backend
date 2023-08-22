@@ -2,7 +2,7 @@
 {
     public class SteamManifest
     {
-        public required int DepotId { get; set; }
+        public required uint DepotId { get; set; }
         public required DateTime CreationTime { get; set; }
 
         public required ulong TotalCompressedSize { get; set; }
