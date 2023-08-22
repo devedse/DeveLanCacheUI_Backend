@@ -149,7 +149,7 @@
 
             var dbSteamManifest = new DbSteamManifest()
             {
-                DepotId = (int)depotManifest.DepotID,
+                DepotId = depotManifest.DepotID,
                 CreationTime = depotManifest.CreationTime,
                 TotalCompressedSize = depotManifest.TotalCompressedSize,
                 TotalUncompressedSize = depotManifest.TotalUncompressedSize,

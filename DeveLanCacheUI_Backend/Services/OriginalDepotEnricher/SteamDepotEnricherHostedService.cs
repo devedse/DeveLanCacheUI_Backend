@@ -124,7 +124,7 @@
                             Console.WriteLine($"Depot File {firstFile} read. Adding {desiredSteamAppToDepots.Count} entries to db...");
 
 
-
+                            desiredSteamAppToDepots = desiredSteamAppToDepots.DistinctBy(t => new { t.SteamAppId, t.SteamDepotId }).ToList();
 
 
 
