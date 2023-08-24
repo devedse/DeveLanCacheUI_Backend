@@ -18,97 +18,96 @@ namespace DeveLanCacheUI_Backend.Migrations
             modelBuilder.HasAnnotation("ProductVersion", "7.0.9");
 
             modelBuilder.Entity("DeveLanCacheUI_Backend.Db.DbModels.DbDownloadEvent", b =>
-            {
-                b.Property<int>("Id")
-                    .ValueGeneratedOnAdd()
-                    .HasColumnType("INTEGER");
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
 
-                b.Property<long>("CacheHitBytes")
-                    .HasColumnType("INTEGER");
+                    b.Property<long>("CacheHitBytes")
+                        .HasColumnType("INTEGER");
 
-                b.Property<string>("CacheIdentifier")
-                    .IsRequired()
-                    .HasColumnType("TEXT");
+                    b.Property<string>("CacheIdentifier")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
-                b.Property<long>("CacheMissBytes")
-                    .HasColumnType("INTEGER");
+                    b.Property<long>("CacheMissBytes")
+                        .HasColumnType("INTEGER");
 
-                b.Property<string>("ClientIp")
-                    .IsRequired()
-                    .HasColumnType("TEXT");
+                    b.Property<string>("ClientIp")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
-                b.Property<DateTime>("CreatedAt")
-                    .HasColumnType("TEXT");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
 
-                b.Property<int?>("DownloadIdentifier")
-                    .HasColumnType("INTEGER");
+                    b.Property<uint?>("DownloadIdentifier")
+                        .HasColumnType("INTEGER");
 
-                b.Property<string>("DownloadIdentifierString")
-                    .HasColumnType("TEXT");
+                    b.Property<string>("DownloadIdentifierString")
+                        .HasColumnType("TEXT");
 
-                b.Property<DateTime>("LastUpdatedAt")
-                    .HasColumnType("TEXT");
+                    b.Property<DateTime>("LastUpdatedAt")
+                        .HasColumnType("TEXT");
 
-                b.HasKey("Id");
+                    b.HasKey("Id");
 
-                b.ToTable("DownloadEvents");
-            });
+                    b.ToTable("DownloadEvents");
+                });
 
             modelBuilder.Entity("DeveLanCacheUI_Backend.Db.DbModels.DbSetting", b =>
-            {
-                b.Property<string>("Key")
-                    .HasColumnType("TEXT");
+                {
+                    b.Property<string>("Key")
+                        .HasColumnType("TEXT");
 
-                b.Property<string>("Value")
-                    .HasColumnType("TEXT");
+                    b.Property<string>("Value")
+                        .HasColumnType("TEXT");
 
-                b.HasKey("Key");
+                    b.HasKey("Key");
 
-                b.ToTable("Settings");
-            });
+                    b.ToTable("Settings");
+                });
 
             modelBuilder.Entity("DeveLanCacheUI_Backend.Db.DbModels.DbSteamDepot", b =>
-            {
-                b.Property<int>("Id")
-                    .ValueGeneratedOnAdd()
-                    .HasColumnType("INTEGER");
+                {
+                    b.Property<uint>("SteamDepotId")
+                        .HasColumnType("INTEGER");
 
-                b.Property<int?>("SteamAppId")
-                    .HasColumnType("INTEGER");
+                    b.Property<uint>("SteamAppId")
+                        .HasColumnType("INTEGER");
 
-                b.HasKey("Id");
+                    b.HasKey("SteamDepotId", "SteamAppId");
 
-                b.ToTable("SteamDepots");
-            });
+                    b.ToTable("SteamDepots");
+                });
 
             modelBuilder.Entity("DeveLanCacheUI_Backend.Db.DbModels.DbSteamManifest", b =>
-            {
-                b.Property<int>("DepotId")
-                    .HasColumnType("INTEGER");
+                {
+                    b.Property<uint>("DepotId")
+                        .HasColumnType("INTEGER");
 
-                b.Property<DateTime>("CreationTime")
-                    .HasColumnType("TEXT");
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("TEXT");
 
-                b.Property<ulong>("ManifestBytesSize")
-                    .HasColumnType("INTEGER");
+                    b.Property<ulong>("ManifestBytesSize")
+                        .HasColumnType("INTEGER");
 
-                b.Property<ulong>("TotalCompressedSize")
-                    .HasColumnType("INTEGER");
+                    b.Property<ulong>("TotalCompressedSize")
+                        .HasColumnType("INTEGER");
 
-                b.Property<ulong>("TotalUncompressedSize")
-                    .HasColumnType("INTEGER");
+                    b.Property<ulong>("TotalUncompressedSize")
+                        .HasColumnType("INTEGER");
 
-                b.Property<string>("UniqueManifestIdentifier")
-                    .IsRequired()
-                    .HasColumnType("TEXT");
+                    b.Property<string>("UniqueManifestIdentifier")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
-                b.HasKey("DepotId", "CreationTime");
+                    b.HasKey("DepotId", "CreationTime");
 
-                b.HasIndex("UniqueManifestIdentifier")
-                    .IsUnique();
+                    b.HasIndex("UniqueManifestIdentifier")
+                        .IsUnique();
 
-                b.ToTable("SteamManifests");
-            });
+                    b.ToTable("SteamManifests");
+                });
 #pragma warning restore 612, 618
         }
     }
