@@ -40,13 +40,30 @@ jobs:
       run: echo ${{ steps.buildx.outputs.name }}
     - name: Available platforms
       run: echo ${{ steps.buildx.outputs.platforms }}
+    - name: Set Image Tags
+      id: tags
+      run: |
+        VERSION=1.0.${{needs.generate_version_number.outputs.build_number}}
+        echo Version: $VERSION
+        echo github.ref: ${{ github.ref }}
+        echo github.actor: ${{ github.actor }}
+        echo branch name: ${GITHUB_REF#refs/heads/}
+        BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | sed 's/\//-/g')
+        echo parsed branch name: ${BRANCH_NAME}
+
+        echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+
+        if [[ "${{ github.ref }}" == 'refs/heads/master' ]]; then
+          echo "TAGS=-t devedse/develancacheui_backend:${VERSION} -t devedse/develancacheui_backend:latest" >> $GITHUB_OUTPUT
+        elif [[ "${{ github.actor }}" == 'dependabot[bot]' ]]; then
+          echo "TAGS=-t devedse/develancacheui_backend:beta_${BRANCH_NAME}" >> $GITHUB_OUTPUT
+        else 
+          echo "TAGS=-t devedse/develancacheui_backend:beta_${BRANCH_NAME} -t devedse/develancacheui_backend:beta_nightly" >> $GITHUB_OUTPUT
+        fi
     - name: Run Buildx
       run: |
-        export VERSION=1.0.${{needs.generate_version_number.outputs.build_number}}
-        echo Version: $VERSION
-        docker buildx build -f DeveLanCacheUI_Backend/Dockerfile --build-arg BUILD_VERSION=$VERSION --platform linux/arm64,linux/amd64 -t devedse/develancacheui_backend:${{needs.generate_version_number.outputs.build_number}} -t devedse/develancacheui_backend:latest ${{ github.ref == 'refs/heads/master' && '--push' || '' }} .
+        docker buildx build -f DeveLanCacheUI_Backend/Dockerfile --build-arg BUILD_VERSION=${{steps.tags.outputs.version}} --platform linux/arm64,linux/amd64 ${{steps.tags.outputs.tags}} ${{ (github.event_name != 'pull_request' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)) && '--push' || '' }} .
 
-  
   build_linux:
     needs: generate_version_number
     runs-on: ubuntu-latest
