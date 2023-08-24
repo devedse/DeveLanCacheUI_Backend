@@ -16,7 +16,7 @@ namespace DeveLanCacheUI_Backend.Steam
         public readonly SteamApps SteamAppsApi;
         public readonly SteamConfiguration Configuration;
         public readonly Client CdnClient;
-        private readonly CallbackManager _callbackManager;
+        public readonly CallbackManager CallbackManager;
 
         public bool LoggedInToSteam { get; private set; }
         
@@ -31,22 +31,22 @@ namespace DeveLanCacheUI_Backend.Steam
             _steamUser = _steamClient.GetHandler<SteamUser>();
             SteamAppsApi = _steamClient.GetHandler<SteamApps>();
 
-            _callbackManager = new CallbackManager(_steamClient);
+            CallbackManager = new CallbackManager(_steamClient);
 
             // This callback is triggered when SteamKit2 makes a successful connection
-            _callbackManager.Subscribe<SteamClient.ConnectedCallback>(e =>
+            CallbackManager.Subscribe<SteamClient.ConnectedCallback>(e =>
             {
                 _isConnecting = false;
                 _disconnected = false;
             });
             // If a connection attempt fails in anyway, SteamKit2 notifies of the failure with a "disconnect"
-            _callbackManager.Subscribe<SteamClient.DisconnectedCallback>(e =>
+            CallbackManager.Subscribe<SteamClient.DisconnectedCallback>(e =>
             {
                 _isConnecting = false;
                 _disconnected = true;
             });
 
-            _callbackManager.Subscribe<SteamUser.LoggedOnCallback>(loggedOn =>
+            CallbackManager.Subscribe<SteamUser.LoggedOnCallback>(loggedOn =>
             {
                 _loggedOnCallbackResult = loggedOn;
             });
@@ -62,7 +62,7 @@ namespace DeveLanCacheUI_Backend.Steam
             bool logonSuccess = false;
             while (!logonSuccess)
             {
-                _callbackManager.RunWaitAllCallbacks(timeout: TimeSpan.FromMilliseconds(50));
+                CallbackManager.RunWaitAllCallbacks(timeout: TimeSpan.FromMilliseconds(50));
 
                 _logger.LogInformation("Connecting to Steam...");
                 ConnectToSteam();
@@ -104,7 +104,7 @@ namespace DeveLanCacheUI_Backend.Steam
                 // Busy waiting until SteamKit2 either succeeds/fails the connection attempt
                 while (_isConnecting)
                 {
-                    _callbackManager.RunWaitAllCallbacks(timeout: TimeSpan.FromMilliseconds(50));
+                    CallbackManager.RunWaitAllCallbacks(timeout: TimeSpan.FromMilliseconds(50));
                     if (DateTime.Now > timeoutAfter)
                     {
                         throw new SteamConnectionException("Timeout connecting to Steam...  Try again in a few moments");
@@ -130,7 +130,7 @@ namespace DeveLanCacheUI_Backend.Steam
             // Busy waiting for the callback to complete, then we can return the callback value synchronously
             while (_loggedOnCallbackResult == null)
             {
-                _callbackManager.RunWaitAllCallbacks(timeout: TimeSpan.FromMilliseconds(50));
+                CallbackManager.RunWaitAllCallbacks(timeout: TimeSpan.FromMilliseconds(50));
                 if (DateTime.Now > timeoutAfter)
                 {
                     throw new SteamLoginException("Timeout logging into Steam...  Try again in a few moments");
@@ -173,7 +173,7 @@ namespace DeveLanCacheUI_Backend.Steam
             _logger.LogInformation("Disconnecting from Steam..");
             while (!_disconnected)
             {
-                _callbackManager.RunWaitAllCallbacks(TimeSpan.FromMilliseconds(100));
+                CallbackManager.RunWaitAllCallbacks(TimeSpan.FromMilliseconds(100));
             }
             _logger.LogInformation("Disconnected from Steam!");
             LoggedInToSteam = false;

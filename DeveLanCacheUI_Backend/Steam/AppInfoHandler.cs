@@ -149,6 +149,9 @@
                 }
             }
 
+            //This cleans all callbacks. If we don't do this loading all apps takes around 7gb and never cleans up
+            _steam3Session.CallbackManager.RunWaitAllCallbacks(timeout: TimeSpan.FromMilliseconds(0));
+
             //// Handling unknown apps
             //List<uint> unknownAppIds = resultSet.Results.SelectMany(e => e.UnknownApps).ToList();
             //foreach (var unknownAppId in unknownAppIds)
