@@ -62,7 +62,7 @@ jobs:
         fi
     - name: Run Buildx
       run: |
-        docker buildx build -f DeveLanCacheUI_Backend/Dockerfile --build-arg BUILD_VERSION=${{steps.tags.outputs.version}} ${{steps.tags.outputs.tags}} --platform linux/arm64,linux/amd64 ${{steps.tags.outputs.tags}} ${{ github.event_name != 'pull_request' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) && '--push' || '' }} .
+        docker buildx build -f DeveLanCacheUI_Backend/Dockerfile --build-arg BUILD_VERSION=${{steps.tags.outputs.version}} --platform linux/arm64,linux/amd64 ${{steps.tags.outputs.tags}} ${{ github.event_name != 'pull_request' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) && '--push' || '' }} .
 
   build_linux:
     needs: generate_version_number
