@@ -4,12 +4,11 @@
     {
         public App? GetSteamAppById(uint? steamAppId)
         {
-            if (steamAppId == null)
+            if (steamAppId != null && SteamApi.SteamAppDict.TryGetValue(steamAppId.Value, out var app))
             {
-                return null;
+                return app;
             }
-            var app = SteamApi.SteamApiData?.applist?.apps?.FirstOrDefault(t => t?.appid == steamAppId);
-            return app;
+            return null;
         }
     }
 }

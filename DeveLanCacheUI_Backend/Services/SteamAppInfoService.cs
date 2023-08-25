@@ -105,6 +105,8 @@
 
         private async Task WatchForAppUpdates(CancellationToken stoppingToken)
         {
+            await _appInfoHandler.EnsureAppsAreLoaded();
+
             _logger.LogInformation("Loading latest app changes....");
 
             while (!stoppingToken.IsCancellationRequested)
@@ -117,7 +119,7 @@
                     var picsChangesResult = await _steam3Session.SteamAppsApi.PICSGetChangesSince().ToTask();
                     var currentChangeNumber = picsChangesResult.CurrentChangeNumber;
                     _currentChangeNumber = currentChangeNumber;
-                    changedApps = (await RetrieveAllAppIds2()).Select(t => t.appid).ToList();
+                    changedApps = (await _appInfoHandler.RetrieveAllAppIds2()).Select(t => t.appid).ToList();
                 }
                 else
                 {
@@ -210,25 +212,5 @@
         //    using var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();
         //    return dbContext.SteamApps.AsNoTracking().Select(e => e.AppId).ToHashSet();
         //}
-
-        //TODO comment
-        public async Task<List<App>> RetrieveAllAppIds2()
-        {
-            _logger.LogInformation("Retrieving all known AppIds");
-
-            using var steamAppsApi = _steam3Session.Configuration.GetAsyncWebAPIInterface("ISteamApps");
-            var response = await steamAppsApi.CallAsync(HttpMethod.Get, "GetAppList", 2);
-
-            var apiApps = response["apps"].Children.Select(app =>
-                new App()
-                {
-                    appid = app["appid"].AsUnsignedInteger(),
-                    name = app["name"].AsString() ?? "Unknown"
-                }
-                ).ToList();
-
-            _logger.LogInformation("Retrieved {appCount} apps", apiApps.Count);
-            return apiApps;
-        }
     }
 }
