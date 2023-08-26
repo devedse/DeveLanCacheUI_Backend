@@ -10,17 +10,11 @@
         private readonly Steam3Session _steam3Session;
         private readonly ILogger<AppInfoHandler> _logger;
 
-        /// <summary>
-        /// A dictionary of all app metadata currently retrieved from Steam
-        /// </summary>
-        //public ConcurrentDictionary<uint, AppInfo> LoadedAppInfos { get; } = new ConcurrentDictionary<uint, AppInfo>();
-
         public AppInfoHandler(Steam3Session steam3Session, ILogger<AppInfoHandler> logger)
         {
             _steam3Session = steam3Session;
             _logger = logger;
         }
-
 
         private Dictionary<uint, App> _cachedAppNames = new Dictionary<uint, App>();
 
@@ -206,20 +200,6 @@
         //        app.Depots.Clear();
         //        app.Depots.AddRange(distinctDepots);
         //    }
-        //}
-
-        ///// <summary>
-        ///// Will return an AppInfo for the specified AppId, that contains various metadata about the app.
-        ///// If the information for the specified app hasn't already been retrieved, then a request to the Steam network will be made.
-        ///// </summary>
-        //public virtual AppInfo GetAppInfo(uint appId)
-        //{
-        //    return LoadedAppInfos[appId];
-        //}
-
-        //public void ClearCachedAppInfos()
-        //{
-        //    LoadedAppInfos.Clear();
         //}
     }
 }

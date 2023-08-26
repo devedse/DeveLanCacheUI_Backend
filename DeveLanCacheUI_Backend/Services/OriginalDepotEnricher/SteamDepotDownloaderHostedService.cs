@@ -6,18 +6,18 @@ namespace DeveLanCacheUI_Backend.Services.OriginalDepotEnricher
     {
         public IServiceProvider Services { get; }
 
-        private readonly IConfiguration _configuration;
+        private readonly DeveLanCacheConfiguration _deveLanCacheConfiguration;
         private readonly ILogger<SteamDepotDownloaderHostedService> _logger;
         private readonly HttpClient _httpClient;
 
         private const string DeveLanCacheUISteamDepotFinderLatestUrl = "https://api.github.com/repos/devedse/DeveLanCacheUI_SteamDepotFinder_Runner/releases/latest";
 
         public SteamDepotDownloaderHostedService(IServiceProvider services,
-            IConfiguration configuration,
+            DeveLanCacheConfiguration deveLanCacheConfiguration,
             ILogger<SteamDepotDownloaderHostedService> logger)
         {
             Services = services;
-            _configuration = configuration;
+            _deveLanCacheConfiguration = deveLanCacheConfiguration;
             _logger = logger;
             _httpClient = new HttpClient();
             _httpClient.DefaultRequestHeaders.Add("User-Agent", "request");
@@ -32,7 +32,7 @@ namespace DeveLanCacheUI_Backend.Services.OriginalDepotEnricher
 
         private async Task GoRun(CancellationToken stoppingToken)
         {
-            var deveLanCacheUIDataDirectory = _configuration.GetValue<string>("DeveLanCacheUIDataDirectory")!;
+            var deveLanCacheUIDataDirectory = _deveLanCacheConfiguration.DeveLanCacheUIDataDirectory;
             if (string.IsNullOrWhiteSpace(deveLanCacheUIDataDirectory))
             {
                 deveLanCacheUIDataDirectory = Directory.GetCurrentDirectory();

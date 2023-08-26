@@ -8,8 +8,7 @@ namespace DeveLanCacheUI_Backend.LogReading
         public static string SkipLogLineReferrerString = SkipLogLineReferrer.ToString();
 
         private readonly IServiceProvider _services;
-
-        private readonly IConfiguration _configuration;
+        private readonly DeveLanCacheConfiguration _deveLanCacheConfiguration;
         private readonly IHubContext<LanCacheHub> _lanCacheHubContext;
         private readonly SteamManifestService _steamManifestService;
         private readonly ILogger<LanCacheLogReaderHostedService> _logger;
@@ -22,35 +21,35 @@ namespace DeveLanCacheUI_Backend.LogReading
         /// </summary>
         private readonly HashSet<string> ExcludedAppIds = new HashSet<string>()
         {
-            "229033",
-            "229000",
-            "229001",
-            "229002",
-            "229003",
-            "229004",
-            "229005",
-            "229006",
-            "229007",
-            "228981",
-            "228982",
-            "228983",
-            "228984",
-            "228985",
-            "228986",
-            "228987",
-            "228988",
-            "228989",
-            "228990"
+            //"229033",
+            //"229000",
+            //"229001",
+            //"229002",
+            //"229003",
+            //"229004",
+            //"229005",
+            //"229006",
+            //"229007",
+            //"228981",
+            //"228982",
+            //"228983",
+            //"228984",
+            //"228985",
+            //"228986",
+            //"228987",
+            //"228988",
+            //"228989",
+            //"228990"
         };
 
         public LanCacheLogReaderHostedService(IServiceProvider services,
-            IConfiguration configuration,
+            DeveLanCacheConfiguration deveLanCacheConfiguration,
             IHubContext<LanCacheHub> lanCacheHubContext,
             SteamManifestService steamManifestService,
             ILogger<LanCacheLogReaderHostedService> logger)
         {
             _services = services;
-            _configuration = configuration;
+            _deveLanCacheConfiguration = deveLanCacheConfiguration;
             _lanCacheHubContext = lanCacheHubContext;
             _steamManifestService = steamManifestService;
             _logger = logger;
@@ -75,7 +74,7 @@ namespace DeveLanCacheUI_Backend.LogReading
                 }
             }
 
-            var logFilePath = _configuration.GetValue<string>("LanCacheLogsDirectory")!;
+            var logFilePath = _deveLanCacheConfiguration.LanCacheLogsDirectory;
             if (logFilePath == null)
             {
                 throw new NullReferenceException("LanCacheLogsDirectory == null, please ensure the LanCacheLogsDirectory ENVIRONMENT_VARIABLE is filled in");
