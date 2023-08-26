@@ -285,7 +285,7 @@ namespace DeveLanCacheUI_Backend.LogReading
 
         public IEnumerable<string> TailFrom2(Stream inputStream, CancellationToken stoppingToken)
         {
-            if (inputStream.Length > TotalBytesRead)
+            if (inputStream.Length >= TotalBytesRead)
             {
                 inputStream.Position = TotalBytesRead;
             }
