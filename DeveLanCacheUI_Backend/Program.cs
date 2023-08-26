@@ -69,7 +69,7 @@ namespace DeveLanCacheUI_Backend
             builder.Services.AddSingleton<RoboHashCache>();
             builder.Services.AddSingleton<SteamManifestService>();
 
-            if (deveLanCacheConfiguration.UseDirectSteamIntegrationForDepots)
+            if (deveLanCacheConfiguration.Feature_DirectSteamIntegration)
             {
                 builder.Services.AddHostedService<SteamAppInfoService>();
 

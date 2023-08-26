@@ -72,6 +72,12 @@ namespace DeveLanCacheUI_Backend.LogReading
                 {
                     oldestLog = lastUpdatedItem.LastUpdatedAt;
                 }
+                var totalByteReadSetting = await dbContext.Settings.FirstOrDefaultAsync(t => t.Key == DbSetting.SettingKey_TotalBytesRead);
+
+                if (_deveLanCacheConfiguration.Feature_SkipLinesBasedOnBytesRead && long.TryParse(totalByteReadSetting?.Value, out var result))
+                {
+                    TotalBytesRead = result;
+                }
             }
 
             var logFilePath = _deveLanCacheConfiguration.LanCacheLogsDirectory;
@@ -176,6 +182,18 @@ namespace DeveLanCacheUI_Backend.LogReading
                                 }
                             }
 
+                            //Save total bytes read
+                            var totalByteReadSetting = await dbContext.Settings.FirstOrDefaultAsync(t => t.Key == DbSetting.SettingKey_TotalBytesRead);
+                            if (totalByteReadSetting == null)
+                            {
+                                totalByteReadSetting = new DbSetting()
+                                {
+                                    Key = DbSetting.SettingKey_TotalBytesRead
+                                };
+                                await dbContext.Settings.AddAsync(totalByteReadSetting);
+                            }
+                            totalByteReadSetting.Value = TotalBytesRead.ToString();
+
                             await dbContext.SaveChangesAsync();
                             await _lanCacheHubContext.Clients.All.SendAsync("UpdateDownloadEvents");
                         });
@@ -263,11 +281,19 @@ namespace DeveLanCacheUI_Backend.LogReading
             }
         }
 
-
-        public long TotalBytesRead { get; private set; }
+        public long TotalBytesRead { get; set; }
 
         public IEnumerable<string> TailFrom2(Stream inputStream, CancellationToken stoppingToken)
         {
+            if (inputStream.Length > TotalBytesRead)
+            {
+                inputStream.Position = TotalBytesRead;
+            }
+            else
+            {
+                TotalBytesRead = 0;
+            }
+
             const int BufferSize = 1024;
             var buffer = new byte[BufferSize];
             var leftoverBuffer = new List<byte>();
@@ -295,8 +321,11 @@ namespace DeveLanCacheUI_Backend.LogReading
                     var lineEndIndex = hasRAtTheEnd ? newlineIndex - 1 : newlineIndex;
 
                     var lineBuffer = new byte[leftoverBuffer.Count + lineEndIndex - searchStartIndex];
-                    leftoverBuffer.CopyTo(lineBuffer);
-                    Array.Copy(buffer, searchStartIndex, lineBuffer, leftoverBuffer.Count, lineEndIndex - searchStartIndex);
+                    leftoverBuffer.CopyTo(0, lineBuffer, 0, Math.Min(lineBuffer.Length, leftoverBuffer.Count));
+                    if (lineEndIndex - searchStartIndex > 0)
+                    {
+                        Array.Copy(buffer, searchStartIndex, lineBuffer, leftoverBuffer.Count, lineEndIndex - searchStartIndex);
+                    }
 
                     TotalBytesRead += lineBuffer.Length + (hasRAtTheEnd ? 1 : 0) + 1;
                     yield return Encoding.UTF8.GetString(lineBuffer);

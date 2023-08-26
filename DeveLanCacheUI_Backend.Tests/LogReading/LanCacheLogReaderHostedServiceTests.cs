@@ -17,32 +17,34 @@ namespace DeveLanCacheUI_Backend.Tests.LogReading
         {
             // Arrange
             var line = new string('a', 200); // a line with 200 characters
-            var content = string.Join("\n", Enumerable.Repeat(line, 11)); // 10 such lines
+            var content = string.Join("\n", Enumerable.Repeat(line, 11)); // 11 such lines
             var stream = MockStream(content);
             var sut = new LanCacheLogReaderHostedService(null!, null!, null!, null!, null!);
             var cts = new CancellationTokenSource();
 
             // Act
-            var _ = sut.TailFrom2(stream, cts.Token).Take(10).ToList(); // Convert to List to execute the entire IEnumerable
+            var data = sut.TailFrom2(stream, cts.Token).Take(10).ToList();
 
             // Assert
-            Assert.AreEqual(10 * 200 + 10, sut.TotalBytesRead); // 9 newlines added between 10 lines
+            Assert.AreEqual(10 * 200 + 10, sut.TotalBytesRead); // 10 newlines added between 10 lines
+            data.ForEach(d => Assert.AreEqual(200, d.Length));
         }
 
         [TestMethod]
         public void TestLineExactly1024_LF()
         {
             // Arrange
-            var line = new string('b', 1023); // a line with 1024 characters
+            var line = new string('b', 1023);
             var stream = MockStream(line + "\n");
             var sut = new LanCacheLogReaderHostedService(null!, null!, null!, null!, null!);
             var cts = new CancellationTokenSource();
 
             // Act
-            var _ = sut.TailFrom2(stream, cts.Token).Take(1).ToList();
+            var data = sut.TailFrom2(stream, cts.Token).Take(1).ToList();
 
             // Assert
             Assert.AreEqual(1024, sut.TotalBytesRead);
+            Assert.AreEqual(1023, data[0].Length);
         }
 
         [TestMethod]
@@ -57,75 +59,81 @@ namespace DeveLanCacheUI_Backend.Tests.LogReading
             var cts = new CancellationTokenSource();
 
             // Act
-            var _ = sut.TailFrom2(stream, cts.Token).Take(2).ToList();
+            var data = sut.TailFrom2(stream, cts.Token).Take(2).ToList();
 
             // Assert
-            Assert.AreEqual(1023 + 1025 + 2, sut.TotalBytesRead); // +1 for the newline between
+            Assert.AreEqual(1023 + 1025 + 2, sut.TotalBytesRead); // +2 for the two '\n' sequences
+            Assert.AreEqual(1023, data[0].Length);
+            Assert.AreEqual(1025, data[1].Length);
         }
 
         [TestMethod]
         public void TestTenLinesEach200_CRLF()
         {
             // Arrange
-            var line = new string('a', 200); // a line with 200 characters
-            var content = string.Join("\r\n", Enumerable.Repeat(line, 11)); // 11 lines with \r\n separator
+            var line = new string('a', 200);
+            var content = string.Join("\r\n", Enumerable.Repeat(line, 11));
             var stream = MockStream(content);
             var sut = new LanCacheLogReaderHostedService(null!, null!, null!, null!, null!);
             var cts = new CancellationTokenSource();
 
             // Act
-            var _ = sut.TailFrom2(stream, cts.Token).Take(10).ToList();
+            var data = sut.TailFrom2(stream, cts.Token).Take(10).ToList();
 
             // Assert
-            Assert.AreEqual(10 * 200 + 10 * 2, sut.TotalBytesRead); // 10 * 2 for the \r\n between 10 lines
+            Assert.AreEqual(10 * 200 + 10 * 2, sut.TotalBytesRead);
+            data.ForEach(d => Assert.AreEqual(200, d.Length));
         }
 
         [TestMethod]
         public void TestLineExactly1024_CRLF()
         {
             // Arrange
-            var line = new string('b', 1022); // 1022 characters + 2 for \r\n = 1024
+            var line = new string('b', 1022);
             var stream = MockStream(line + "\r\n");
             var sut = new LanCacheLogReaderHostedService(null!, null!, null!, null!, null!);
             var cts = new CancellationTokenSource();
 
             // Act
-            var _ = sut.TailFrom2(stream, cts.Token).Take(1).ToList();
+            var data = sut.TailFrom2(stream, cts.Token).Take(1).ToList();
 
             // Assert
             Assert.AreEqual(1024, sut.TotalBytesRead);
+            Assert.AreEqual(1022, data[0].Length);
         }
 
         [TestMethod]
         public void TestLineExactly1025_CRLF()
         {
             // Arrange
-            var line = new string('b', 1023); // 1022 characters + 2 for \r\n = 1024
+            var line = new string('b', 1023);
             var stream = MockStream(line + "\r\n");
             var sut = new LanCacheLogReaderHostedService(null!, null!, null!, null!, null!);
             var cts = new CancellationTokenSource();
 
             // Act
-            var _ = sut.TailFrom2(stream, cts.Token).Take(1).ToList();
+            var data = sut.TailFrom2(stream, cts.Token).Take(1).ToList();
 
             // Assert
             Assert.AreEqual(1025, sut.TotalBytesRead);
+            Assert.AreEqual(1023, data[0].Length);
         }
 
         [TestMethod]
         public void TestLineExactly1026_CRLF()
         {
             // Arrange
-            var line = new string('b', 1024); // 1022 characters + 2 for \r\n = 1024
+            var line = new string('b', 1024);
             var stream = MockStream(line + "\r\n");
             var sut = new LanCacheLogReaderHostedService(null!, null!, null!, null!, null!);
             var cts = new CancellationTokenSource();
 
             // Act
-            var _ = sut.TailFrom2(stream, cts.Token).Take(1).ToList();
+            var data = sut.TailFrom2(stream, cts.Token).Take(1).ToList();
 
             // Assert
             Assert.AreEqual(1026, sut.TotalBytesRead);
+            Assert.AreEqual(1024, data[0].Length);
         }
 
         [TestMethod]
@@ -143,9 +151,55 @@ namespace DeveLanCacheUI_Backend.Tests.LogReading
             var data = sut.TailFrom2(stream, cts.Token).Take(2).ToList();
 
             // Assert
-            Assert.AreEqual(1023 + 1025 + 4, sut.TotalBytesRead); // +4 for the two \r\n sequences
+            Assert.AreEqual(1023 + 1025 + 4, sut.TotalBytesRead);
             Assert.AreEqual(1023, data[0].Length);
-            Assert.AreEqual(1025, data[0].Length);
+            Assert.AreEqual(1025, data[1].Length);
+        }
+
+        [TestMethod]
+        public void When_InitialTotalBytesReadIsSetToSkipFirstLine_ThenShouldOnlyReadLast2Lines_LF()
+        {
+            // Arrange
+            var initialTotalBytesRead = 4;
+            var content = "abc\ndef\nghi\n";
+            var stream = MockStream(content);
+            var sut = new LanCacheLogReaderHostedService(null!, null!, null!, null!, null!)
+            {
+                TotalBytesRead = initialTotalBytesRead
+            };
+            var cts = new CancellationTokenSource();
+
+            // Act
+            var data = sut.TailFrom2(stream, cts.Token).Take(2).ToList();
+
+            // Assert
+            Assert.AreEqual(2, data.Count);
+            Assert.AreEqual("def", data[0]);
+            Assert.AreEqual("ghi", data[1]);
+            Assert.AreEqual(content.Length, sut.TotalBytesRead);
+        }
+
+        [TestMethod]
+        public void When_InitialTotalBytesReadIsGreaterThanStreamLength_PositionIsAdjusted_LF()
+        {
+            // Arrange
+            var content = "line1\nline2\nline3\n";
+            var stream = MockStream(content);
+            var sut = new LanCacheLogReaderHostedService(null!, null!, null!, null!, null!)
+            {
+                TotalBytesRead = 500
+            };
+            var cts = new CancellationTokenSource();
+
+            // Act
+            var data = sut.TailFrom2(stream, cts.Token).Take(3).ToList();
+
+            // Assert
+            Assert.AreEqual(3, data.Count);
+            Assert.AreEqual("line1", data[0]);
+            Assert.AreEqual("line2", data[1]);
+            Assert.AreEqual("line3", data[2]);
+            Assert.AreEqual(content.Length, sut.TotalBytesRead);
         }
     }
 }
