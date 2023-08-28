@@ -145,8 +145,6 @@
 
                 _logger.LogInformation("Waiting for 120 seconds before checking for new changes...");
                 await Task.Delay(120_000, stoppingToken);
-
-                throw new TaskCanceledException();
             }
         }
     }
