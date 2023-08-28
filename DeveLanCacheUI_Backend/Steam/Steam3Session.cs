@@ -19,7 +19,7 @@ namespace DeveLanCacheUI_Backend.Steam
         public readonly CallbackManager CallbackManager;
 
         public bool LoggedInToSteam { get; private set; }
-        
+
         #endregion
 
         public Steam3Session(ILogger<Steam3Session> logger)
@@ -53,7 +53,7 @@ namespace DeveLanCacheUI_Backend.Steam
 
             CdnClient = new Client(_steamClient);
         }
-        
+
         public void LoginToSteam()
         {
             _logger.LogInformation("Starting Steam login!");
@@ -80,7 +80,7 @@ namespace DeveLanCacheUI_Backend.Steam
             LoggedInToSteam = true;
             _logger.LogInformation("Steam session initialization complete!");
         }
-        
+
         #region  Connecting to Steam
 
         // Used to busy wait until the connection attempt finishes in either a success or failure
@@ -180,9 +180,11 @@ namespace DeveLanCacheUI_Backend.Steam
         }
 
         #endregion
-        
+
         public void Dispose()
         {
+            _logger.LogInformation($"Disposing {nameof(Steam3Session)}...");
+            Disconnect();
             CdnClient.Dispose();
         }
     }
