@@ -61,6 +61,13 @@
                     var result = await _steam3Session.SteamAppsApi.PICSGetChangesSince(previousChangeNumber).ToTask();
                     _currentChangeNumber = result.CurrentChangeNumber;
                     changedApps = result.AppChanges.Select(e => e.Value.ID).ToList();
+
+                    if (changedApps.Count == 0 && previousChangeNumber - _currentChangeNumber >= 1000)
+                    {
+                        _logger.LogWarning($"No changes obtained from Steam for changelist {previousChangeNumber} -> {_currentChangeNumber}. This is usually because the changeSet we had was too old. Falling back to re-obtain all apps.");
+                        _currentChangeNumber = 0;
+                        continue;
+                    }
                 }
 
                 if (changedApps.Any())
@@ -138,6 +145,8 @@
 
                 _logger.LogInformation("Waiting for 120 seconds before checking for new changes...");
                 await Task.Delay(120_000, stoppingToken);
+
+                throw new TaskCanceledException();
             }
         }
     }
