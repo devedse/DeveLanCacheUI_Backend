@@ -4,6 +4,8 @@ on: push
 
 jobs:
   generate_version_number:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     outputs:
       build_number: ${{ github.ref == 'refs/heads/master' && steps.buildnumber.outputs.build_number || 1 }}
