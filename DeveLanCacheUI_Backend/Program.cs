@@ -69,14 +69,14 @@ namespace DeveLanCacheUI_Backend
             builder.Services.AddSingleton<RoboHashCache>();
             builder.Services.AddSingleton<SteamManifestService>();
 
-            if (deveLanCacheConfiguration.UseDirectSteamIntegrationForDepots)
+            if (deveLanCacheConfiguration.Feature_DirectSteamIntegration)
             {
                 builder.Services.AddHostedService<SteamAppInfoService>();
 
                 //TODO should probably initialize the Steam session here rather than inside the service
                 builder.Services.AddSingleton<Steam3Session>();
                 builder.Services.AddSingleton<AppInfoHandler>();
-                builder.Services.AddSingleton<ISteamAppObtainerService, NewSteamAppObtainerService>();
+                builder.Services.AddSingleton<ISteamAppObtainerService, AppInfoHandler>(t => t.GetRequiredService<AppInfoHandler>());
             }
             else
             {

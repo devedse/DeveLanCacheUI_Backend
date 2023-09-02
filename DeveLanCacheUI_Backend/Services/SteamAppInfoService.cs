@@ -1,6 +1,5 @@
 ﻿namespace DeveLanCacheUI_Backend.Services
 {
-    //TODO document what this is for
     public class SteamAppInfoService : BackgroundService
     {
         private readonly ILogger<SteamAppInfoService> _logger;
@@ -34,77 +33,15 @@
                 }
             }
 
-
-
-            //await ProcessAllKnownAppIds();
-
             await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
 
             await WatchForAppUpdates(stoppingToken);
         }
 
-        /* TODO handle the "task was cancelled" and "key not found in dictionary" exceptions more gracefully.
-            They don't actually hurt anything, as this code will automatically recover, but they do look concerning in the logs
-         */
-        //private async Task ProcessAllKnownAppIds()
-        //{
-
-
-        //    // Get all currently known (or unknown) app ids from Steam
-        //    List<uint> allKnownAppIds = await RetrieveAllAppIds2();
-
-
-        //    // Filter out any app ids that have been previously processed
-        //    //var previouslyProcessedIds = PreviouslyProcessedAppIds();
-        //    //var appIdsToProcess = allKnownAppIds.Where(e => !previouslyProcessedIds.Contains(e))
-        //    //                                    .OrderBy(e => e)
-        //    //                                    .ToList();
-        //    var appIdsToProcess = allKnownAppIds;
-
-        //    var chunkSize = 1000;
-        //    var batches = appIdsToProcess.Chunk(chunkSize).ToList();
-
-        //    _logger.LogInformation("Retrieving app metadata...");
-        //    while (batches.Any())
-        //    {
-        //        try
-        //        {
-        //            _logger.LogInformation("{remainingCount} apps remaining", batches.Sum(e => e.Length).ToString("N0"));
-        //            var currentBatch = batches.First().ToList();
-
-        //            // Retrieving app info
-        //            var appInfos = await _appInfoHandler.RetrieveAppMetadataAsync(currentBatch);
-
-        //            //// Persisting to DB
-        //            //using var scope = _services.CreateAsyncScope();
-        //            //using var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();
-        //            //var models = appInfos.Select(e => new DbSteamAppInfo
-        //            //{
-        //            //    AppId = e.AppId,
-        //            //    Name = e.Name ?? "",
-        //            //    Depots = e.Depots.Select(e => new DbSteamDepot
-        //            //    {
-        //            //        Id = e.DepotId
-        //            //    }).ToList()
-        //            //});
-        //            //dbContext.AddRange(models);
-        //            //dbContext.SaveChanges();
-
-        //            // If successful pop it from the list of jobs
-        //            batches.RemoveAt(0);
-        //        }
-        //        catch (Exception e)
-        //        {
-        //            _logger.LogError(e, "Unexpected error while retrieving app info");
-        //        }
-        //    }
-
-        //    //_appInfoHandler.ClearCachedAppInfos();
-        //    _logger.LogInformation("Done loading app metadata");
-        //}
-
         private async Task WatchForAppUpdates(CancellationToken stoppingToken)
         {
+            await _appInfoHandler.EnsureAppsAreLoaded();
+
             _logger.LogInformation("Loading latest app changes....");
 
             while (!stoppingToken.IsCancellationRequested)
@@ -117,13 +54,20 @@
                     var picsChangesResult = await _steam3Session.SteamAppsApi.PICSGetChangesSince().ToTask();
                     var currentChangeNumber = picsChangesResult.CurrentChangeNumber;
                     _currentChangeNumber = currentChangeNumber;
-                    changedApps = (await RetrieveAllAppIds2()).Select(t => t.appid).ToList();
+                    changedApps = (await _appInfoHandler.RetrieveAllAppIds2()).Select(t => t.appid).ToList();
                 }
                 else
                 {
                     var result = await _steam3Session.SteamAppsApi.PICSGetChangesSince(previousChangeNumber).ToTask();
                     _currentChangeNumber = result.CurrentChangeNumber;
                     changedApps = result.AppChanges.Select(e => e.Value.ID).ToList();
+
+                    if (changedApps.Count == 0 && previousChangeNumber - _currentChangeNumber >= 1000)
+                    {
+                        _logger.LogWarning($"No changes obtained from Steam for changelist {previousChangeNumber} -> {_currentChangeNumber}. This is usually because the changeSet we had was too old. Falling back to re-obtain all apps.");
+                        _currentChangeNumber = 0;
+                        continue;
+                    }
                 }
 
                 if (changedApps.Any())
@@ -202,33 +146,6 @@
                 _logger.LogInformation("Waiting for 120 seconds before checking for new changes...");
                 await Task.Delay(120_000, stoppingToken);
             }
-        }
-
-        //private HashSet<uint> PreviouslyProcessedAppIds()
-        //{
-        //    using var scope = _services.CreateAsyncScope();
-        //    using var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();
-        //    return dbContext.SteamApps.AsNoTracking().Select(e => e.AppId).ToHashSet();
-        //}
-
-        //TODO comment
-        public async Task<List<App>> RetrieveAllAppIds2()
-        {
-            _logger.LogInformation("Retrieving all known AppIds");
-
-            using var steamAppsApi = _steam3Session.Configuration.GetAsyncWebAPIInterface("ISteamApps");
-            var response = await steamAppsApi.CallAsync(HttpMethod.Get, "GetAppList", 2);
-
-            var apiApps = response["apps"].Children.Select(app =>
-                new App()
-                {
-                    appid = app["appid"].AsUnsignedInteger(),
-                    name = app["name"].AsString() ?? "Unknown"
-                }
-                ).ToList();
-
-            _logger.LogInformation("Retrieved {appCount} apps", apiApps.Count);
-            return apiApps;
         }
     }
 }

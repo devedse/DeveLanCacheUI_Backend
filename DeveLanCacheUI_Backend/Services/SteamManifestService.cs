@@ -2,9 +2,6 @@
 {
     public class SteamManifestService
     {
-        private const bool StoreSteamDbProtoManifestBytesInDb = true;
-
-        private readonly IConfiguration _configuration;
         private readonly IServiceProvider _services;
         private readonly IHttpClientFactory _httpClientFactoryForManifestDownloads;
         private readonly ILogger<SteamManifestService> _logger;
@@ -12,14 +9,13 @@
 
         private static SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(1, 1);
 
-        public SteamManifestService(IConfiguration configuration, IServiceProvider services, IHttpClientFactory httpClientFactory, ILogger<SteamManifestService> logger)
+        public SteamManifestService(DeveLanCacheConfiguration deveLanCacheConfiguration, IServiceProvider services, IHttpClientFactory httpClientFactory, ILogger<SteamManifestService> logger)
         {
-            _configuration = configuration;
             _services = services;
             _httpClientFactoryForManifestDownloads = httpClientFactory;
             _logger = logger;
 
-            var deveLanCacheUIDataDirectory = configuration.GetValue<string>("DeveLanCacheUIDataDirectory") ?? string.Empty;
+            var deveLanCacheUIDataDirectory = deveLanCacheConfiguration.DeveLanCacheUIDataDirectory ?? string.Empty;
             _manifestDirectory = Path.Combine(deveLanCacheUIDataDirectory, "manifests");
         }
 

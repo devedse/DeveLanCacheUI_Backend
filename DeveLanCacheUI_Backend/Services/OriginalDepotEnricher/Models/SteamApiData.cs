@@ -15,5 +15,4 @@
         public uint appid { get; set; }
         public string name { get; set; }
     }
-
 }

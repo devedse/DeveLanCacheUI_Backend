@@ -4,15 +4,15 @@
     {
         public IServiceProvider Services { get; }
 
-        private readonly IConfiguration _configuration;
+        private readonly DeveLanCacheConfiguration _deveLanCacheConfiguration;
         private readonly ILogger<SteamDepotEnricherHostedService> _logger;
 
         public SteamDepotEnricherHostedService(IServiceProvider services,
-            IConfiguration configuration,
+            DeveLanCacheConfiguration deveLanCacheConfiguration,
             ILogger<SteamDepotEnricherHostedService> logger)
         {
             Services = services;
-            _configuration = configuration;
+            _deveLanCacheConfiguration = deveLanCacheConfiguration;
             _logger = logger;
         }
 
@@ -24,10 +24,9 @@
         }
 
 
-
         private async Task GoRun(CancellationToken stoppingToken)
         {
-            var deveLanCacheUIDataDirectory = _configuration.GetValue<string>("DeveLanCacheUIDataDirectory")!;
+            var deveLanCacheUIDataDirectory = _deveLanCacheConfiguration.DeveLanCacheUIDataDirectory;
             if (string.IsNullOrWhiteSpace(deveLanCacheUIDataDirectory))
             {
                 deveLanCacheUIDataDirectory = Directory.GetCurrentDirectory();
@@ -107,17 +106,6 @@
                                     };
 
                                     desiredSteamAppToDepots.Add(csvModel);
-
-
-
-                                    //if (!depotToAppDict.ContainsKey(depotId))
-                                    //{
-                                    //    depotToAppDict.Add(depotId, appId);
-                                    //}
-                                    //else
-                                    //{
-                                    //    //Console.WriteLine("Warning: Duplicate depotId found, skipping");
-                                    //}
                                 }
                             }
 
@@ -126,11 +114,6 @@
 
                             desiredSteamAppToDepots = desiredSteamAppToDepots.DistinctBy(t => new { t.SteamAppId, t.SteamDepotId }).ToList();
 
-
-
-
-
-
                             var retryPolicy = Policy
                                 .Handle<DbUpdateException>()
                                 .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
@@ -138,8 +121,6 @@
                                 {
                                     _logger.LogWarning($"An error occurred while trying to save changes: {exception.Message}");
                                 });
-
-                            //var depotList = depotToAppDict.Keys.ToList();
 
                             //Batch operations in groups of 1000
                             for (int i = 0; i < desiredSteamAppToDepots.Count; i += 1000)
@@ -169,38 +150,6 @@
                                     }
                                 });
                             }
-
-                            ////Batch operations in groups of 1000
-                            //for (int i = 0; i < depotList.Count; i += 1000)
-                            //{
-                            //    await retryPolicy.ExecuteAsync(async () =>
-                            //    {
-                            //        await using (var scope = Services.CreateAsyncScope())
-                            //        {
-                            //            using var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();
-                            //            var currentBatch = depotList.Skip(i).Take(1000).ToList();
-                            //            int newDepots = 0;
-                            //            foreach (var depotId in currentBatch)
-                            //            {
-                            //                // Insert or update using Polly's retry policy
-                            //                var depot = await dbContext.SteamDepots.FirstOrDefaultAsync(d => d.SteamDepotId == depotId && d.SteamAppId == );
-                            //                if (depot == null)
-                            //                {
-                            //                    //Depot does not exist, create it
-                            //                    depot = new DbSteamDepot { Id = depotId };
-                            //                    dbContext.SteamDepots.Add(depot);
-                            //                    newDepots++;
-                            //                }
-                            //                //Link the depot to the existing app
-                            //                depot.SteamAppId = depotToAppDict[depotId];
-                            //            }
-                            //            //Save changes
-                            //            await dbContext.SaveChangesAsync();
-                            //            _logger.LogInformation($"Depots Processed: {i + currentBatch.Count}/{depotList.Count}. Updated {currentBatch.Count - newDepots}, New {newDepots}");
-                            //        }
-                            //    });
-                            //}
-
 
                             var processedDirectoryPath = Path.Combine(depotFileDirectory, "processed");
                             Directory.CreateDirectory(processedDirectoryPath);

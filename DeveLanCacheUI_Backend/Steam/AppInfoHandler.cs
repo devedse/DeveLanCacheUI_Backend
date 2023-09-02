@@ -5,63 +5,53 @@
     ///
     /// Adapted from : https://github.com/tpill90/steam-lancache-prefill/blob/master/SteamPrefill/Handlers/AppInfoHandler.cs
     /// </summary>
-    public class AppInfoHandler
+    public class AppInfoHandler : ISteamAppObtainerService
     {
         private readonly Steam3Session _steam3Session;
+        private readonly ILogger<AppInfoHandler> _logger;
 
-        /// <summary>
-        /// A dictionary of all app metadata currently retrieved from Steam
-        /// </summary>
-        //public ConcurrentDictionary<uint, AppInfo> LoadedAppInfos { get; } = new ConcurrentDictionary<uint, AppInfo>();
-
-        public AppInfoHandler(Steam3Session steam3Session)
+        public AppInfoHandler(Steam3Session steam3Session, ILogger<AppInfoHandler> logger)
         {
             _steam3Session = steam3Session;
+            _logger = logger;
         }
 
-        ///// <summary>
-        ///// Gets the latest app metadata from steam, for the specified apps, as well as their related DLC apps
-        ///// </summary>
-        //public async Task<List<AppInfo>> RetrieveAppMetadataAsync(List<uint> appIds)
-        //{
-        //    await BulkLoadAppInfoAsync(appIds);
+        private Dictionary<uint, App> _cachedAppNames = new Dictionary<uint, App>();
 
-        //    //// Once we have loaded all the apps, we can also load information for related DLC
-        //    //await FetchDlcAppInfoAsync();
-
-        //    return appIds.Select(appId => GetAppInfo(appId))
-        //                 // These are unknown app ids
-        //                 .Where(e => e != null)
-        //                 .ToList();
-        //}
-
-        public async Task<List<SteamDepotEnricherCSVModel>> BulkLoadAppInfoAsync(List<uint> appIds)
+        public App? GetSteamAppById(uint? steamAppId)
         {
-            return await AppInfoRequestAsync(appIds);
-            //var filteredAppIds = appIds.Distinct().ToList();
+            if (steamAppId != null && _cachedAppNames.TryGetValue(steamAppId.Value, out var app))
+            {
+                return app;
+            }
+            return null;
+        }
 
-            //// Breaking into at most 10 concurrent batches
-            //int batchSize = (filteredAppIds.Count / 5) + 1;
-            //var batches = filteredAppIds.Chunk(batchSize).ToList();
+        //TODO comment
+        public async Task<List<App>> EnsureAppsAreLoaded()
+        {
+            _logger.LogInformation("Retrieving all known AppIds");
 
-            //var total = new List<SteamDepotEnricherCSVModel>();
-            //foreach (var batch in batches)
-            //{
-            //    var res = await AppInfoRequestAsync(batch.ToList());
-            //    total.AddRange(res);
-            //}
+            using var steamAppsApi = _steam3Session.Configuration.GetAsyncWebAPIInterface("ISteamApps");
+            var response = await steamAppsApi.CallAsync(HttpMethod.Get, "GetAppList", 2);
 
-            //return total;
+            var apiApps = response["apps"].Children.Select(app =>
+                new App()
+                {
+                    appid = app["appid"].AsUnsignedInteger(),
+                    name = app["name"].AsString() ?? "Unknown"
+                }
+                ).ToList();
 
-            //// Breaking the request into smaller batches that complete faster
-            //var batchJobs = new List<Task>();
-            //foreach (var batch in batches)
-            //{
-            //    batchJobs.Add(AppInfoRequestAsync(batch.ToList()));
-            //}
+            _cachedAppNames = apiApps.DistinctBy(t => t.appid).ToDictionary(t => t.appid, t => t);
 
-            //await Task.WhenAll(batchJobs);
-            //_ansiConsole.LogMarkupVerbose($"Loaded metadata for {Magenta(filteredAppIds.Count)} apps", initialAppIdLoadTimer);
+            _logger.LogInformation("Retrieved {appCount} apps", apiApps.Count);
+            return apiApps;
+        }
+
+        public async Task<List<App>> RetrieveAllAppIds2()
+        {
+            return _cachedAppNames.Values.ToList();
         }
 
         /// <summary>
@@ -69,7 +59,7 @@
         /// than multiple individual requests, as it seems that there is a minimum threshold for how quickly steam will return results.
         /// </summary>
         /// <param name="appIdsToLoad">The list of App Ids to retrieve info for</param>
-        private async Task<List<SteamDepotEnricherCSVModel>> AppInfoRequestAsync(List<uint> appIdsToLoad)
+        public async Task<List<SteamDepotEnricherCSVModel>> BulkLoadAppInfoAsync(List<uint> appIdsToLoad)
         {
             if (!appIdsToLoad.Any())
             {
@@ -102,6 +92,14 @@
             foreach (var a in appInfos)
             {
                 var depots = a.Value.KeyValues["depots"];
+
+                var updatedApp = new App()
+                {
+                    appid = a.Value.KeyValues["appid"].AsUnsignedInteger(),
+                    name = a.Value.KeyValues["common"]?["name"]?.AsString() ?? "Unknown"
+                };
+
+                _cachedAppNames[updatedApp.appid] = updatedApp;
 
                 foreach (var dep in depots.Children)
                 {
@@ -202,20 +200,6 @@
         //        app.Depots.Clear();
         //        app.Depots.AddRange(distinctDepots);
         //    }
-        //}
-
-        ///// <summary>
-        ///// Will return an AppInfo for the specified AppId, that contains various metadata about the app.
-        ///// If the information for the specified app hasn't already been retrieved, then a request to the Steam network will be made.
-        ///// </summary>
-        //public virtual AppInfo GetAppInfo(uint appId)
-        //{
-        //    return LoadedAppInfos[appId];
-        //}
-
-        //public void ClearCachedAppInfos()
-        //{
-        //    LoadedAppInfos.Clear();
         //}
     }
 }

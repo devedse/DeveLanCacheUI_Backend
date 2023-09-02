@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-
-namespace DeveLanCacheUI_Backend.Db.DbModels
+﻿namespace DeveLanCacheUI_Backend.Db.DbModels
 {
     public class DbSteamDepot
     {
