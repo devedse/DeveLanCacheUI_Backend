@@ -1,6 +1,5 @@
 ﻿using Microsoft.Data.Sqlite;
 using System.Diagnostics;
-using System.Resources;
 
 namespace DeveLanCacheUI_Backend.Helpers
 {

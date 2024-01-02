@@ -1,6 +1,5 @@
 ﻿using DeveLanCacheUI_Backend.Db;
 using DeveLanCacheUI_Backend.Db.DbModels;
-using DeveLanCacheUI_Backend.LogReading.Models;
 using Microsoft.EntityFrameworkCore;
 using Polly;
 using System.Diagnostics;

@@ -6,7 +6,6 @@ using Microsoft.EntityFrameworkCore;
 using Polly;
 using SteamKit2;
 using System.Text.Json;
-using System.Threading;
 
 namespace DeveLanCacheUI_Backend.SteamProto
 {

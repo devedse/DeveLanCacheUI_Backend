@@ -4,7 +4,6 @@ using DeveLanCacheUI_Backend.Db.DbModels;
 using DeveLanCacheUI_Backend.Steam;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Polly;
 
 namespace DeveLanCacheUI_Backend.Controllers
 {
