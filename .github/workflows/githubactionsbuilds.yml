@@ -11,7 +11,7 @@ jobs:
     #   build_number: ${{ github.ref == 'refs/heads/master' && steps.buildnumber.outputs.build_number || 1 }}
     steps:
     - name: Generate build number
-      if: github.ref == 'refs/heads/master'
+      #if: github.ref == 'refs/heads/master'
       id: buildnumber
       uses: onyxmueller/build-tag-number@v1
       with:
