@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Caching.Memory;
-
-namespace DeveLanCacheUI_Backend.DeveHashImageGeneratorStuff
+﻿namespace DeveLanCacheUI_Backend.DeveHashImageGeneratorStuff
 {
     public class RoboHashCache
     {

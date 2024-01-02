@@ -1,6 +1,4 @@
-﻿using DeveLanCacheUI_Backend.LogReading.Models;
-
-namespace DeveLanCacheUI_Backend.LogReading
+﻿namespace DeveLanCacheUI_Backend.LogReading
 {
     public static class LanCacheLogLineParser
     {
