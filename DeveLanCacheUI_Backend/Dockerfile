@@ -21,4 +21,5 @@ RUN dotnet publish "DeveLanCacheUI_Backend.csproj" -c Release -o /app/publish /p
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+ENV ASPNETCORE_HTTP_PORTS=80
 ENTRYPOINT ["dotnet", "DeveLanCacheUI_Backend.dll"]
