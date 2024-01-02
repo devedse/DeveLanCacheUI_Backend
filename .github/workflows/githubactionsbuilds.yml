@@ -11,7 +11,7 @@ jobs:
     - name: Generate build number
       if: github.ref == 'refs/heads/master'
       id: buildnumber
-      uses: einaregilsson/build-number@v3
+      uses: onyxmueller/build-tag-number@v1
       with:
         token: ${{secrets.github_token}}
 
