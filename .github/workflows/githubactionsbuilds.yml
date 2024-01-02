@@ -7,8 +7,9 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-latest
-    # outputs:
-    #   build_number: ${{ github.ref == 'refs/heads/master' && steps.buildnumber.outputs.build_number || 1 }}
+    outputs:
+      #build_number: ${{ github.ref == 'refs/heads/master' && steps.buildnumber.outputs.build_number || 1 }}
+      build_number: ${{ steps.buildnumber.outputs.build_number }}
     steps:
     - name: Generate build number
       #if: github.ref == 'refs/heads/master'
