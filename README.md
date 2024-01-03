@@ -60,7 +60,7 @@ services:
     ports:
       - '7302:80'
     environment:
-      - BACKENDURL=reverseproxyapi
+      - BACKENDURL=http://10.88.20.2:7301 #iclude http/https here
 ```
 
 ### Advanced setup
@@ -95,7 +95,7 @@ services:
     ports:
       - '7302:80'
     environment:
-      - BACKENDURL=http://10.88.20.2:7301
+      - BACKENDURL=http://10.88.20.2:7301 #iclude http/https here
 ```
 
 ## How it works
