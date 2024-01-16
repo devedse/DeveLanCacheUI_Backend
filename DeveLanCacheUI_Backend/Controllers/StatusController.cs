@@ -1,10 +1,4 @@
-﻿using DeveLanCacheUI_Backend.Db;
-using DeveLanCacheUI_Backend.Db.DbModels;
-using DeveLanCacheUI_Backend.Status;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-
-namespace DeveLanCacheUI_Backend.Controllers
+﻿namespace DeveLanCacheUI_Backend.Controllers
 {
     [ApiController]
     [Route("[controller]")]

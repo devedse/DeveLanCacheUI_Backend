@@ -1,8 +1,3 @@
-using DeveLanCacheUI_Backend.Controllers.Models;
-using DeveLanCacheUI_Backend.Db;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-
 namespace DeveLanCacheUI_Backend.Controllers
 {
     [ApiController]

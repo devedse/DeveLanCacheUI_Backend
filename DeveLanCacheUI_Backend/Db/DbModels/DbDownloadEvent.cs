@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace DeveLanCacheUI_Backend.Db.DbModels
+﻿namespace DeveLanCacheUI_Backend.Db.DbModels
 {
     public class DbDownloadEvent
     {
@@ -10,7 +8,7 @@ namespace DeveLanCacheUI_Backend.Db.DbModels
         //steam/epicgames/wsus/epicgames
         public required string CacheIdentifier { get; set; }
 
-        public int? DownloadIdentifier { get; set; }
+        public uint? DownloadIdentifier { get; set; }
         public string? DownloadIdentifierString { get; set; }
 
         public required string ClientIp { get; set; }

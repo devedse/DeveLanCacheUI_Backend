@@ -40,7 +40,7 @@ namespace DeveLanCacheUI_Backend.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("DownloadIdentifier")
+                    b.Property<uint?>("DownloadIdentifier")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("DownloadIdentifierString")
@@ -69,21 +69,20 @@ namespace DeveLanCacheUI_Backend.Migrations
 
             modelBuilder.Entity("DeveLanCacheUI_Backend.Db.DbModels.DbSteamDepot", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<uint>("SteamDepotId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("SteamAppId")
+                    b.Property<uint>("SteamAppId")
                         .HasColumnType("INTEGER");
 
-                    b.HasKey("Id");
+                    b.HasKey("SteamDepotId", "SteamAppId");
 
                     b.ToTable("SteamDepots");
                 });
 
             modelBuilder.Entity("DeveLanCacheUI_Backend.Db.DbModels.DbSteamManifest", b =>
                 {
-                    b.Property<int>("DepotId")
+                    b.Property<uint>("DepotId")
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("CreationTime")

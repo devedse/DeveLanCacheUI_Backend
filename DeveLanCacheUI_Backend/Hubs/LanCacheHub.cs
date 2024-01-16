@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.SignalR;
-
-namespace DeveLanCacheUI_Backend.Hubs
+﻿namespace DeveLanCacheUI_Backend.Hubs
 {
     public class LanCacheHub : Hub
     {

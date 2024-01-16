@@ -1,17 +1,3 @@
-
-using DeveLanCacheUI_Backend.Db;
-using DeveLanCacheUI_Backend.DeveHashImageGeneratorStuff;
-using DeveLanCacheUI_Backend.Helpers;
-using DeveLanCacheUI_Backend.Hubs;
-using DeveLanCacheUI_Backend.LogReading;
-using DeveLanCacheUI_Backend.Steam;
-using DeveLanCacheUI_Backend.SteamProto;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.ResponseCompression;
-using Microsoft.AspNetCore.Rewrite;
-using Microsoft.EntityFrameworkCore;
-using System.Text.Json.Serialization;
-
 namespace DeveLanCacheUI_Backend
 {
     public class Program
@@ -20,8 +6,11 @@ namespace DeveLanCacheUI_Backend
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            var deveLanCacheConfiguration = builder.Configuration.Get<DeveLanCacheConfiguration>()!;
+            builder.Services.AddSingleton<DeveLanCacheConfiguration>(deveLanCacheConfiguration);
+
             // Add services to the container.
-            var deveLanCacheUIDataDirectory = builder.Configuration.GetValue<string>("DeveLanCacheUIDataDirectory");
+            var deveLanCacheUIDataDirectory = deveLanCacheConfiguration.DeveLanCacheUIDataDirectory;
             if (deveLanCacheUIDataDirectory != null)
             {
                 Directory.CreateDirectory(deveLanCacheUIDataDirectory);
@@ -53,6 +42,8 @@ namespace DeveLanCacheUI_Backend
             {
                 options.UseSqlite(conStringReplaced);
             });
+            //TODO make everythging use this
+            //builder.Services.AddSingleton<DbContextFactory>();
 
             builder.Services.AddControllers(options =>
             {
@@ -65,17 +56,34 @@ namespace DeveLanCacheUI_Backend
             }).AddJsonOptions(x =>
                  x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+            // Swagger
+            builder.Services.AddControllers().AddJsonOptions(x => x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
+            //TODO this guy is using up a ton of ram at idle.  ~600mb
             builder.Services.AddHostedService<LanCacheLogReaderHostedService>();
-            builder.Services.AddHostedService<SteamDepotEnricherHostedService>();
-            builder.Services.AddHostedService<SteamDepotDownloaderHostedService>();
 
             builder.Services.AddHttpClient();
 
             builder.Services.AddSingleton<RoboHashCache>();
             builder.Services.AddSingleton<SteamManifestService>();
+
+            if (deveLanCacheConfiguration.Feature_DirectSteamIntegration)
+            {
+                builder.Services.AddHostedService<SteamAppInfoService>();
+
+                //TODO should probably initialize the Steam session here rather than inside the service
+                builder.Services.AddSingleton<Steam3Session>();
+                builder.Services.AddSingleton<AppInfoHandler>();
+                builder.Services.AddSingleton<ISteamAppObtainerService, AppInfoHandler>(t => t.GetRequiredService<AppInfoHandler>());
+            }
+            else
+            {
+                builder.Services.AddHostedService<SteamDepotEnricherHostedService>();
+                builder.Services.AddHostedService<SteamDepotDownloaderHostedService>();
+                builder.Services.AddSingleton<ISteamAppObtainerService, OriginalSteamAppObtainerService>();
+            }
 
             builder.Services.AddSignalR();
             builder.Services.AddResponseCompression(opts =>
@@ -100,6 +108,7 @@ namespace DeveLanCacheUI_Backend
 
             app.UseResponseCompression();
 
+            // Applying migrations
             using (var scope = app.Services.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();

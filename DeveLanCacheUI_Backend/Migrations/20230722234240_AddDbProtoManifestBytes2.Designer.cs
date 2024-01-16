@@ -5,12 +5,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using DbContext = DeveLanCacheUI_Backend.Db.DeveLanCacheUIDbContext;
 
 #nullable disable
 
 namespace DeveLanCacheUI_Backend.Migrations
 {
-    [DbContext(typeof(DeveLanCacheUIDbContext))]
+    [DbContext(typeof(DbContext))]
     [Migration("20230722234240_AddDbProtoManifestBytes2")]
     partial class AddDbProtoManifestBytes2
     {

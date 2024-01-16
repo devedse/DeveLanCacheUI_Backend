@@ -1,10 +1,8 @@
-﻿using System.Text.Json;
-
-namespace DeveLanCacheUI_Backend.Controllers.Models
+﻿namespace DeveLanCacheUI_Backend.Controllers.Models
 {
     public class SteamManifest
     {
-        public required int DepotId { get; set; }
+        public required uint DepotId { get; set; }
         public required DateTime CreationTime { get; set; }
 
         public required ulong TotalCompressedSize { get; set; }

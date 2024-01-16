@@ -1,4 +1,4 @@
-﻿using DeveLanCacheUI_Backend.SteamProto;
+﻿using DeveLanCacheUI_Backend.Services;
 
 namespace DeveLanCacheUI_Backend.Tests.ProtoTest
 {
