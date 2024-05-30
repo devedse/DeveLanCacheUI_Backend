@@ -118,7 +118,7 @@ jobs:
     - name: Run CodeCov
       uses: codecov/codecov-action@v4
       with:
-        directory: ./DeveMazeGeneratorCore.Tests/TestResults
+        directory: ./DeveLanCacheUI_Backend.Tests/TestResults
         fail_ci_if_error: true # optional (default = false)
         verbose: true # optional (default = false)
       env:
