@@ -1,7 +1,4 @@
-﻿using System.Diagnostics;
-using System.Reflection;
-
-namespace DeveLanCacheUI_Backend.Status
+﻿namespace DeveLanCacheUI_Backend.Status
 {
     public static class StatusObtainer
     {
