@@ -14,6 +14,22 @@ namespace DeveLanCacheUI_Backend.Controllers
         }
 
         [HttpGet]
+        public async Task<DownloadStats> GetTotalDownloadStats()
+        {
+            var totalStats = await _dbContext.DownloadEvents
+                .GroupBy(de => 1)
+                .Select(g => new DownloadStats
+                {
+                    Identifier = "Total",
+                    TotalCacheHitBytes = g.Sum(de => de.CacheHitBytes),
+                    TotalCacheMissBytes = g.Sum(de => de.CacheMissBytes)
+                })
+                .FirstOrDefaultAsync();
+
+            return totalStats ?? new DownloadStats() { Identifier = "Total" };
+        }
+
+        [HttpGet]
         public async Task<IEnumerable<DownloadStats>> GetDownloadStatsPerClient()
         {
             var statsQuery = await _dbContext.DownloadEvents
