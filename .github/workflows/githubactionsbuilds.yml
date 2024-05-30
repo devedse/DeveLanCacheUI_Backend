@@ -116,11 +116,13 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: dotnet-sonarscanner end /d:sonar.login=${{secrets.SONARQUBETOKEN}}
     - name: Run CodeCov
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
       with:
-        directory: ./DeveLanCacheUI_Backend.Tests/TestResults
+        directory: ./DeveMazeGeneratorCore.Tests/TestResults
         fail_ci_if_error: true # optional (default = false)
-        verbose: true # optional (default = false)  
+        verbose: true # optional (default = false)
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
     # - uses: actions/upload-artifact@v3
     #   with:
