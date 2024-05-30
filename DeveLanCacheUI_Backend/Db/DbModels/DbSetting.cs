@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace DeveLanCacheUI_Backend.Db.DbModels
+﻿namespace DeveLanCacheUI_Backend.Db.DbModels
 {
     public class DbSetting
     {
@@ -9,5 +7,7 @@ namespace DeveLanCacheUI_Backend.Db.DbModels
         public string? Value { get; set; }
 
         public const string SettingKey_DepotVersion = nameof(SettingKey_DepotVersion);
+        public const string SettingKey_SteamChangeNumber = nameof(SettingKey_SteamChangeNumber);
+        public const string SettingKey_TotalBytesRead = nameof(SettingKey_TotalBytesRead);
     }
 }
