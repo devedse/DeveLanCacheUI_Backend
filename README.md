@@ -162,10 +162,6 @@ https://linux.die.net/man/8/mount.cifs
 | More data things | 80% (We have stats now) |
 | Dark Theme + Toggle | 90% (Won't remember on reload) |
 
-TODO:
-1. Implement auto reload SteamAPI
-1. Implement automatically downloading Depot App Mapping .csv file
-
 ## Build status
 
 | GitHubActions Builds |
