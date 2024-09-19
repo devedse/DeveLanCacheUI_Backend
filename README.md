@@ -61,6 +61,7 @@ services:
       - '7302:80'
     environment:
       - BACKENDURL=http://10.88.20.2:7301 #iclude http/https here
+      - AllowedHosts=*
 ```
 
 ### Advanced setup
@@ -96,6 +97,12 @@ services:
       - '7302:80'
     environment:
       - BACKENDURL=http://10.88.20.2:7301 #iclude http/https here
+      - AllowedHosts=*
+```
+
+Note: You could also configure a Reverse Proxy (Like Nginx Proxy Manager) to handle CORS. This would allow you to remove the following environment variable (See: https://github.com/devedse/DeveLanCacheUI_Backend/issues/49):
+```
+- AllowedHosts=*
 ```
 
 ### Actual Steam Automatic Update Integration
