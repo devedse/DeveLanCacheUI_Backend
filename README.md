@@ -20,6 +20,12 @@ Can show other Download events:
 Can show client / service stats:
 ![Screenshot](Screenshot_Frontend_3.png)
 
+## Homepage integration
+
+It's also possible to integrate DeveLanCacheUI with [Homepage](https://gethomepage.dev/):
+![Screenshot](Screenshot_HomepageWidget.png)
+[Learn More](https://gethomepage.dev/latest/widgets/services/develancacheui/)
+
 ## How to run this
 
 Steps:
