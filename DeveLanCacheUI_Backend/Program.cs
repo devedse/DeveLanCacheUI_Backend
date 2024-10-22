@@ -6,6 +6,8 @@ namespace DeveLanCacheUI_Backend
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            Console.WriteLine($"Starting DeveLanCacheUI_Backend (Version: {StatusObtainer.GetStatus().Version})");
+
             var deveLanCacheConfiguration = builder.Configuration.Get<DeveLanCacheConfiguration>()!;
             builder.Services.AddSingleton<DeveLanCacheConfiguration>(deveLanCacheConfiguration);
 
