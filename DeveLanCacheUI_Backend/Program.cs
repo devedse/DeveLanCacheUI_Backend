@@ -64,6 +64,8 @@ namespace DeveLanCacheUI_Backend
             //TODO this guy is using up a ton of ram at idle.  ~600mb
             builder.Services.AddHostedService<LanCacheLogReaderHostedService>();
 
+            builder.Services.AddHostedService<FrontendRefresherService>();
+
             builder.Services.AddHttpClient();
 
             builder.Services.AddSingleton<RoboHashCache>();

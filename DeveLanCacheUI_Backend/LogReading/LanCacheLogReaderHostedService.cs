@@ -195,7 +195,7 @@ namespace DeveLanCacheUI_Backend.LogReading
                             totalByteReadSetting.Value = TotalBytesRead.ToString();
 
                             await dbContext.SaveChangesAsync();
-                            await _lanCacheHubContext.Clients.All.SendAsync("UpdateDownloadEvents");
+                            FrontendRefresherService.RequireFrontendRefresh();
                         });
                     }
                 }
