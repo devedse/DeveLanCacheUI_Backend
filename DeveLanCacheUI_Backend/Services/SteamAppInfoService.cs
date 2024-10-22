@@ -7,7 +7,7 @@
         private readonly AppInfoHandler _appInfoHandler;
         private readonly IServiceProvider _services;
 
-        private uint _currentChangeNumber;
+        public static uint _currentChangeNumber { get; private set; }
 
         public SteamAppInfoService(ILogger<SteamAppInfoService> logger, Steam3Session steam3Session, AppInfoHandler appInfoHandler,
             IServiceProvider services)

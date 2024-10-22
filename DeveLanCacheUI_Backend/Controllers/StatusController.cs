@@ -20,8 +20,15 @@
 
             var statusModel = StatusObtainer.GetStatus();
 
-            var depotVersionSetting = await _dbContext.Settings.FirstOrDefaultAsync(t => t.Key == DbSetting.SettingKey_DepotVersion);
-            statusModel.DepotVersion = depotVersionSetting?.Value;
+            if (SteamAppInfoService._currentChangeNumber != 0)
+            {
+                statusModel.DepotVersion = SteamAppInfoService._currentChangeNumber.ToString();
+            }
+            else
+            {
+                var depotVersionSetting = await _dbContext.Settings.FirstOrDefaultAsync(t => t.Key == DbSetting.SettingKey_DepotVersion);
+                statusModel.DepotVersion = depotVersionSetting?.Value;
+            }
             return statusModel;
         }
     }
