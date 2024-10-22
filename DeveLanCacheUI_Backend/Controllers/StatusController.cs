@@ -22,12 +22,12 @@
 
             if (SteamAppInfoService._currentChangeNumber != 0)
             {
-                statusModel.DepotVersion = SteamAppInfoService._currentChangeNumber.ToString();
+                statusModel.SteamChangeNumber = SteamAppInfoService._currentChangeNumber.ToString();
             }
             else
             {
                 var depotVersionSetting = await _dbContext.Settings.FirstOrDefaultAsync(t => t.Key == DbSetting.SettingKey_DepotVersion);
-                statusModel.DepotVersion = depotVersionSetting?.Value;
+                statusModel.SteamDepotVersion = depotVersionSetting?.Value;
             }
             return statusModel;
         }
