@@ -8,11 +8,9 @@ jobs:
       contents: write
     runs-on: ubuntu-latest
     outputs:
-      #build_number: ${{ github.ref == 'refs/heads/master' && steps.buildnumber.outputs.build_number || 1 }}
       build_number: ${{ steps.buildnumber.outputs.build_number }}
     steps:
     - name: Generate build number
-      #if: github.ref == 'refs/heads/master'
       id: buildnumber
       uses: onyxmueller/build-tag-number@v1
       with:
@@ -57,7 +55,7 @@ jobs:
         echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
 
         if [[ "${{ github.ref }}" == 'refs/heads/master' ]]; then
-          echo "TAGS=-t devedse/develancacheui_backend:${VERSION} -t devedse/develancacheui_backend:latest" >> $GITHUB_OUTPUT
+          echo "TAGS=-t devedse/develancacheui_backend:${VERSION} -t devedse/develancacheui_backend:latest -t devedse/develancacheui_backend:beta_nightly" >> $GITHUB_OUTPUT
         elif [[ "${{ github.actor }}" == 'dependabot[bot]' ]]; then
           echo "TAGS=-t devedse/develancacheui_backend:beta_${BRANCH_NAME}" >> $GITHUB_OUTPUT
         else 

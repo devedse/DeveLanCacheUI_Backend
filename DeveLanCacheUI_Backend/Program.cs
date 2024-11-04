@@ -6,6 +6,8 @@ namespace DeveLanCacheUI_Backend
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            Console.WriteLine($"Starting DeveLanCacheUI_Backend (Version: {StatusObtainer.GetStatus().Version})");
+
             var deveLanCacheConfiguration = builder.Configuration.Get<DeveLanCacheConfiguration>()!;
             builder.Services.AddSingleton<DeveLanCacheConfiguration>(deveLanCacheConfiguration);
 
@@ -64,6 +66,8 @@ namespace DeveLanCacheUI_Backend
             //TODO this guy is using up a ton of ram at idle.  ~600mb
             builder.Services.AddHostedService<LanCacheLogReaderHostedService>();
 
+            builder.Services.AddHostedService<FrontendRefresherService>();
+
             builder.Services.AddHttpClient();
 
             builder.Services.AddSingleton<RoboHashCache>();
@@ -88,8 +92,7 @@ namespace DeveLanCacheUI_Backend
             builder.Services.AddSignalR();
             builder.Services.AddResponseCompression(opts =>
             {
-                opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
-                   new[] { "application/octet-stream" });
+                opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(["application/octet-stream"]);
             });
 
             // Configure CORS policy
