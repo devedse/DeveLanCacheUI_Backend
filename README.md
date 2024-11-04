@@ -79,7 +79,7 @@ docker-compose.yml:
 version: '3'
 
 services:
-  develancacheui_backend:                                                                   # needs to be named exactly like this if using magic 'reverseproxyapi'
+  develancacheui_backend:                           # needs to be named exactly like this if using magic 'reverseproxyapi'
     image: devedse/develancacheui_backend:latest
     restart: unless-stopped
     ports:
