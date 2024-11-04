@@ -32,7 +32,6 @@ Steps:
 1. Create/mount the relevant directories
 1. Update the docker-compose.yml with your own URL's / paths. Changing the TZ and LANG only impact the way the container logs. (E.g. 23/04/2023 instead of 04/23/2023)
 1. Run the docker-compose file
-1. Copy paste the app-depot-output.csv file in the mounted `depotdir`. This will automatically fill the database with all Depot => App mappings (Grab here: https://github.com/devedse/DeveLanCacheUI_SteamDepotFinder_Runner/releases)
 1. Github Sponsor me 5k euro's kthnx
 1. Profit
 
@@ -80,7 +79,7 @@ docker-compose.yml:
 version: '3'
 
 services:
-  develancacheui_backend:
+  develancacheui_backend:                                                                   # needs to be named exactly like this if using magic 'reverseproxyapi'
     image: devedse/develancacheui_backend:latest
     restart: unless-stopped
     ports:
@@ -91,6 +90,8 @@ services:
       - ConnectionStrings__DefaultConnection=Data Source={DeveLanCacheUIDataDirectory}/database/develancacheui.db;
       - TZ=Europe/Amsterdam
       - LANG=en_GB.UTF-8
+      - Feature_DirectSteamIntegration=true
+      - Feature_SkipLinesBasedOnBytesRead=true
     volumes:
       - "/home/pi/dockercomposers/develancacheui/backend:/var/develancacheuidata"
       - "/mnt/mynas/DockerComposers/lancache/logs:/var/develancacheui/lancachelogs:ro"
@@ -102,7 +103,7 @@ services:
     ports:
       - '7302:80'
     environment:
-      - BACKENDURL=http://10.88.20.2:7301 #iclude http/https here
+      - BACKENDURL=http://10.88.20.2:7301 #iclude http/https here                           
       - AllowedHosts=*
 ```
 
@@ -126,6 +127,40 @@ services:
 ```
 
 This should now all works quite neatly, if it doesn't, let me know in a github issue :smile:.
+
+### table with explanation on variables
+
+**Environment Variables Backend**
+
+| Variable  | Explanation | Default | 
+| -- | -- | -- |
+| LanCacheLogsDirectory | The internal folder inside the container the backend tries to look for the lancache log files. Ideally don't touch this. | /var/develancacheui/lancachelogs |
+| DeveLanCacheUIDataDirectory | The internal folder inside the container the backend stores all it's data. Ideally don't touch this. | /var/develancacheuidata |
+| ConnectionStrings__DefaultConnection | The connection string used with SQLite. Ideally don't touch this. | Data Source={DeveLanCacheUIDataDirectory}/database/develancacheui.db; |
+| TZ | Set this to your timezone | ?? |
+| LANG | Set this to your language | ?? |
+| Feature_DirectSteamIntegration | When false, the backend will download a .CSV file with all depot => steam game mappings (from: https://github.com/devedse/DeveLanCacheUI_SteamDepotFinder_Runner/releases). When true, the tool wil generate this itself / keep it up to date. I would suggest turning this on. | false (for now) |
+| Feature_SkipLinesBasedOnBytesRead | When false, it will re-read through the whole file on startup. When true, it tries to be smart and start reading from where it last left off. I would suggest turning this on. | false (for now) |
+
+**Volume Mounts Backend**
+
+| Path  | Explanation | 
+| -- | -- |
+| - "/home/pi/dockercomposers/develancacheui/backend:/var/develancacheuidata" | Change the part before the `:` to an empty data directory |
+| - "/mnt/mynas/DockerComposers/lancache/logs:/var/develancacheui/lancachelogs:ro" | Change the part before the `:` to the log directory for lancache |
+
+**Environment Variables Backend**
+| Variable  | Explanation | Default | 
+| -- | -- | -- |
+| AllowedHosts | Sets the HOSTS header for CORS. Leave at * unless you know what you're doing | * |
+| BACKENDURL | The backend url where the frontend connects to. Since this is usually a different domain you need to setup CORS correctly. See *1 | N/A |
+
+
+1.  CORS can be quite hard to setup. So I added a secret magic flag: `BACKENDURL=reverseproxyapi` If you enter this the frontend itself will forward the requests to the backend over the docker internal network. The url is hardcoded to `http://develancacheui_backend:80` so please ensure you leave the servicename exactly like that: `develancacheui_backend`. Else docker won't be able to resolve this.
+
+## Automatic updates
+
+I would strongly suggest setting up https://github.com/containrrr/watchtower for this. It works amazing.
 
 ## How it works
 
@@ -166,7 +201,7 @@ https://linux.die.net/man/8/mount.cifs
 | Implement other services besides steam | 80% (I don't show games for other services yet) |
 | Auto refresh | 100% |
 | More data things | 80% (We have stats now) |
-| Dark Theme + Toggle | 90% (Won't remember on reload) |
+| Dark Theme + Toggle | 100% (A bit jank, but it works) |
 
 ## Build status
 
