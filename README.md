@@ -203,6 +203,15 @@ https://linux.die.net/man/8/mount.cifs
 | More data things | 80% (We have stats now) |
 | Dark Theme + Toggle | 100% (A bit jank, but it works) |
 
+## Related projects
+
+| Project | Explanation |
+| -- | -- |
+| [DeveLanCacheUI_Backend](https://github.com/devedse/DeveLanCacheUI_Backend/) | The main project. Contains the readme. |
+| [DeveLanCacheUI_Frontend](https://github.com/devedse/DeveLanCacheUI_Backend/) | The Frontend. |
+| [DeveLanCacheUI_SteamDepotFinder](https://github.com/devedse/DeveLanCacheUI_SteamDepotFinder) | A tool to generate the mapping for steam depots and games. Kinda deprecated when `Feature_DirectSteamIntegration` is set to true |
+| [DeveLanCacheUI_SteamDepotFinder_Runner](https://github.com/devedse/DeveLanCacheUI_SteamDepotFinder_Runner) | Runs the SteamDepotFinder on a weekly basis. |
+
 ## Build status
 
 | GitHubActions Builds |
