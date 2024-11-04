@@ -24,7 +24,8 @@ Can show client / service stats:
 
 It's also possible to integrate DeveLanCacheUI with [Homepage](https://gethomepage.dev/):
 ![Screenshot](Screenshot_HomepageWidget.png)
-[Learn More](https://gethomepage.dev/latest/widgets/services/develancacheui/)
+
+[Learn More](https://gethomepage.dev/widgets/services/develancacheui/)
 
 ## How to run this
 
