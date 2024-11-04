@@ -1,3 +1,21 @@
+- [DeveLanCacheUI\_Backend](#develancacheui_backend)
+  - [Screenshots](#screenshots)
+  - [Homepage integration](#homepage-integration)
+  - [How to run this](#how-to-run-this)
+    - [Minimal Setup](#minimal-setup)
+    - [Advanced setup](#advanced-setup)
+    - [Actual Steam Automatic Update Integration](#actual-steam-automatic-update-integration)
+    - [Configuration variable explanation](#configuration-variable-explanation)
+  - [Automatic updates](#automatic-updates)
+  - [How it works](#how-it-works)
+  - [Issue: My access.log file is updated but my DeveLanCacheUI\_Backend isn't reading the new lines](#issue-my-accesslog-file-is-updated-but-my-develancacheui_backend-isnt-reading-the-new-lines)
+  - [Progress / Plans](#progress--plans)
+  - [Related projects](#related-projects)
+  - [Build status](#build-status)
+  - [DockerHub](#dockerhub)
+  - [Code Coverage Status](#code-coverage-status)
+  - [Code Quality Status](#code-quality-status)
+
 # DeveLanCacheUI_Backend
 A UI for Lan Cache.
 
@@ -129,7 +147,7 @@ services:
 
 This should now all works quite neatly, if it doesn't, let me know in a github issue :smile:.
 
-### table with explanation on variables
+### Configuration variable explanation
 
 **Environment Variables Backend**
 
