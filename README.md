@@ -17,7 +17,7 @@
   - [Code Quality Status](#code-quality-status)
 
 # DeveLanCacheUI_Backend
-A UI for Lan Cache.
+A UI for [LanCache.NET](https://lancache.net/)
 [![](https://dcbadge.limes.pink/api/server/https://discord.gg/BKnBS4u?style=flat)](https://discord.gg/BKnBS4u)
 
 ** Important Upgrade Guide**
