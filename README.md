@@ -146,7 +146,7 @@ services:
     ...
 ```
 
-This should now all works quite neatly, if it doesn't, let me know in a github issue :smile:.
+This should now all works quite neatly, if it doesn't, let me know in a github issue or on the LanCache.NET discord :smile:.
 
 ### Configuration variable explanation
 
