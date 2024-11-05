@@ -18,7 +18,7 @@
 
 # DeveLanCacheUI_Backend
 A UI for Lan Cache.
-[![](https://dcbadge.limes.pink/api/server/https://discord.gg/BKnBS4u)](https://discord.gg/BKnBS4u)
+[![](https://dcbadge.limes.pink/api/server/https://discord.gg/BKnBS4u?style=flat)](https://discord.gg/BKnBS4u)
 
 ** Important Upgrade Guide**
 
