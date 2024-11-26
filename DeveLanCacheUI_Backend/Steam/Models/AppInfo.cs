@@ -16,12 +16,12 @@
         /// </summary>
         public List<DepotInfo> Depots { get; } = new List<DepotInfo>();
 
-        public string Name { get; set; }
-        
+        public string? Name { get; set; }
+
         /// <summary>
         /// Specifies the type of app, can be "config", "tool", "game".  This seems to be up to the developer, and isn't 100% consistent.
         /// </summary>
-        public AppType Type { get; }
+        public AppType? Type { get; }
 
         //TODO might want to make this a field
         public bool IsInvalidApp => Type == null;

@@ -40,7 +40,7 @@
         /// Attempts to convert and return the value of this instance as an enum.
         /// If the conversion is invalid, null is returned.
         /// </summary>
-        public static T AsEnum<T>(this KeyValue keyValue, bool toLower = false) where T : EnumBase<T>
+        public static T? AsEnum<T>(this KeyValue keyValue, bool toLower = false) where T : EnumBase<T>
         {
             if (keyValue == KeyValue.Invalid)
             {

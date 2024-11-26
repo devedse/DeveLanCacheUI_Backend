@@ -73,7 +73,7 @@ jobs:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 8.0.x
+        dotnet-version: 9.0.x
     - name: dotnet restore
       run: dotnet restore DeveLanCacheUI_Backend.sln
     - name: dotnet build
@@ -89,7 +89,7 @@ jobs:
     - name: Setup .NET Core @ Latest
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 8.0.x     
+        dotnet-version: 9.0.x     
     - uses: actions/setup-java@v4
       with:
         distribution: 'zulu'
