@@ -14,7 +14,13 @@
             var result = c.GetAsync("https://api.steampowered.com/ISteamApps/GetAppList/v2/").Result;
             var resultString = result.Content.ReadAsStringAsync().Result;
 
-            return JsonSerializer.Deserialize<SteamApiData>(resultString);
+            var retval = JsonSerializer.Deserialize<SteamApiData>(resultString);
+
+            //There was one person with an issue where one appid was added as a duplicate???, no idea how but this seems to be a bug in the steam api.
+            //I'm just going to distinct on it
+            retval.applist.apps = retval.applist.apps.DistinctBy(t => t.appid).ToArray();
+
+            return retval;
         }
     }
 }
