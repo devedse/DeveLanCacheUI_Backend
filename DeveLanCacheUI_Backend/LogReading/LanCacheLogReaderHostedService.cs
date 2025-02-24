@@ -316,8 +316,7 @@ namespace DeveLanCacheUI_Backend.LogReading
 
                 while ((newlineIndex = Array.IndexOf(buffer, (byte)'\n', searchStartIndex, bytesRead - searchStartIndex)) != -1)
                 {
-                    // Include \r in the line if present
-                    //var hasRAtTheEnd = newlineIndex > 0 ? buffer[newlineIndex - 1] == '\r' : leftoverBuffer[^1] == '\r';
+                    // Include \r in the line if present                   
                     var hasRAtTheEnd = newlineIndex > 0 ? buffer[newlineIndex - 1] == '\r' : (leftoverBuffer.Count > 0 ? leftoverBuffer[^1] == '\r' : false);
                     var lineEndIndex = hasRAtTheEnd ? newlineIndex - 1 : newlineIndex;
 
