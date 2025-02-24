@@ -1,4 +1,5 @@
 ﻿using DeveLanCacheUI_Backend.LogReading;
+using SteamKit2.Internal;
 using System.Text;
 
 namespace DeveLanCacheUI_Backend.Tests.LogReading
@@ -199,6 +200,56 @@ namespace DeveLanCacheUI_Backend.Tests.LogReading
             Assert.AreEqual("line1", data[0]);
             Assert.AreEqual("line2", data[1]);
             Assert.AreEqual("line3", data[2]);
+            Assert.AreEqual(content.Length, sut.TotalBytesRead);
+        }
+
+        [TestMethod]
+        public void When_DoubleNewLine_AtExactBufferLength_Works()
+        {
+            // Arrange
+            var stringOfLength1024 = new string('a', 1023);
+            var content = $"{stringOfLength1024}\n\nline2\nline3\n";
+            var stream = MockStream(content);
+            var sut = new LanCacheLogReaderHostedService(null!, null!, null!, null!, null!)
+            {
+                TotalBytesRead = 0
+            };
+            var cts = new CancellationTokenSource();
+
+            // Act
+            var data = sut.TailFrom2(stream, cts.Token).Take(4).ToList();
+
+            // Assert
+            Assert.AreEqual(4, data.Count);
+            Assert.AreEqual(stringOfLength1024, data[0]);
+            Assert.AreEqual("", data[1]);
+            Assert.AreEqual("line2", data[2]);
+            Assert.AreEqual("line3", data[3]);
+            Assert.AreEqual(content.Length, sut.TotalBytesRead);
+        }
+
+        [TestMethod]
+        public void When_DoubleNewLine_AtExactBufferLength_CRLF_Works()
+        {
+            // Arrange
+            var stringOfLength1024 = new string('a', 1023);
+            var content = $"{stringOfLength1024}\n\r\nline2\nline3\n";
+            var stream = MockStream(content);
+            var sut = new LanCacheLogReaderHostedService(null!, null!, null!, null!, null!)
+            {
+                TotalBytesRead = 0
+            };
+            var cts = new CancellationTokenSource();
+
+            // Act
+            var data = sut.TailFrom2(stream, cts.Token).Take(4).ToList();
+
+            // Assert
+            Assert.AreEqual(4, data.Count);
+            Assert.AreEqual(stringOfLength1024, data[0]);
+            Assert.AreEqual("", data[1]);
+            Assert.AreEqual("line2", data[2]);
+            Assert.AreEqual("line3", data[3]);
             Assert.AreEqual(content.Length, sut.TotalBytesRead);
         }
     }
