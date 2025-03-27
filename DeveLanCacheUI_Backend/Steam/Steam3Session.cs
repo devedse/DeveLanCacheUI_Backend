@@ -183,7 +183,7 @@ namespace DeveLanCacheUI_Backend.Steam
 
         public void Dispose()
         {
-            _logger.LogInformation($"Disposing {nameof(Steam3Session)}...");
+            _logger.LogInformation("Disposing {Steam3Session}...", nameof(Steam3Session));
             Disconnect();
             CdnClient.Dispose();
         }

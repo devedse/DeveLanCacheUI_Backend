@@ -97,7 +97,7 @@ namespace DeveLanCacheUI_Backend.LogReading
 
                 foreach (var currentSet in batches)
                 {
-                    _logger.LogInformation("Processing {count} lines... First DateTime: {firstDate} (Total processed: {totalLinesProcessed})",
+                    _logger.LogInformation("Processing {Count} lines... First DateTime: {FirstDate} (Total processed: {TotalLinesProcessed})",
                         currentSet.Count, currentSet.FirstOrDefault()?.DateTime, totalLinesProcessed);
                     totalLinesProcessed += currentSet.Count;
 
@@ -108,7 +108,7 @@ namespace DeveLanCacheUI_Backend.LogReading
                             .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                             (exception, timeSpan, context) =>
                             {
-                                _logger.LogError($"An error occurred while trying to save changes: {exception.Message}");
+                                _logger.LogError("An error occurred while trying to save changes: {Message}", exception.Message);
                             });
 
                         await retryPolicy.ExecuteAsync(async () =>
@@ -130,7 +130,7 @@ namespace DeveLanCacheUI_Backend.LogReading
                                 }
                                 if (lanCacheLogLine.CacheIdentifier == "steam" && lanCacheLogLine.Request.Contains("/manifest/") && DateTime.Now < lanCacheLogLine.DateTime.AddDays(14))
                                 {
-                                    _logger.LogInformation($"Found manifest for Depot: {lanCacheLogLine.DownloadIdentifier}");
+                                    _logger.LogInformation("Found manifest for Depot: {DownloadIdentifier}", lanCacheLogLine.DownloadIdentifier);
                                     var ttt = lanCacheLogLine;
                                     _steamManifestService.TryToDownloadManifest(ttt);
                                 }
@@ -155,7 +155,7 @@ namespace DeveLanCacheUI_Backend.LogReading
 
                                 if (cachedEvent == null || !(cachedEvent.LastUpdatedAt > lanCacheLogLine.DateTime.AddMinutes(-5)))
                                 {
-                                    _logger.LogInformation($"Adding new event because more then 5 minutes no update: {cacheKey} ({lanCacheLogLine.DateTime})");
+                                    _logger.LogInformation("Adding new event because more than 5 minutes no update: {CacheKey} ({DateTime})", cacheKey, lanCacheLogLine.DateTime);
 
                                     uint.TryParse(lanCacheLogLine.DownloadIdentifier, out var downloadIdentifierInt);
                                     cachedEvent = new DbDownloadEvent()
@@ -224,7 +224,7 @@ namespace DeveLanCacheUI_Backend.LogReading
                         //Only log once in 30 times
                         if (dontLogForSpecificCounter % 30 == 0)
                         {
-                            _logger.LogInformation($"{DateTime.Now} No new log lines, waiting...");
+                            _logger.LogInformation("{Now} No new log lines, waiting...", DateTime.Now);
                         }
                         dontLogForSpecificCounter++;
                         Thread.Sleep(1000);
@@ -245,7 +245,7 @@ namespace DeveLanCacheUI_Backend.LogReading
                     skipCounter++;
                     if (skipCounter % 1000 == 0)
                     {
-                        _logger.LogInformation($"Skipped total of {skipCounter} lines (already processed)");
+                        _logger.LogInformation("Skipped total of {SkipCounter} lines (already processed)", skipCounter);
                     }
                 }
             }

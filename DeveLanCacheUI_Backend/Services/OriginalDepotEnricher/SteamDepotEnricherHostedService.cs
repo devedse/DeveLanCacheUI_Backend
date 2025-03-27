@@ -34,7 +34,7 @@
 
             var depotFileDirectory = Path.Combine(deveLanCacheUIDataDirectory, "depotdir");
 
-            _logger.LogInformation($"Watching directory: '{depotFileDirectory}' for any .CSV files to update our Depot database...");
+            _logger.LogInformation("Watching directory: '{DepotFileDirectory}' for any .CSV files to update our Depot database...", depotFileDirectory);
 
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -57,13 +57,13 @@
                             var newFileSize = new FileInfo(firstFile).Length;
                             if (curFileSize != newFileSize)
                             {
-                                _logger.LogInformation($"File size has increased, waiting 5 more seconds... from: {curFileSize} to {newFileSize}");
+                                _logger.LogInformation("File size has increased, waiting 5 more seconds... from: {OldSize} to {NewSize}", curFileSize, newFileSize);
                                 curFileSize = newFileSize;
                                 fileSizeTimer.Restart();
                             }
                             else
                             {
-                                _logger.LogInformation($"File size equal for {fileSizeTimer.Elapsed}");
+                                _logger.LogInformation("File size equal for {Elapsed}", fileSizeTimer.Elapsed);
                             }
                             await Task.Delay(1000);
                         }
@@ -119,7 +119,7 @@
                                 .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                                 (exception, timeSpan, context) =>
                                 {
-                                    _logger.LogWarning($"An error occurred while trying to save changes: {exception.Message}");
+                                    _logger.LogWarning("An error occurred while trying to save changes: {Message}", exception.Message);
                                 });
 
                             //Batch operations in groups of 1000
@@ -160,7 +160,7 @@
                         }
                         catch (IOException ex)
                         {
-                            _logger.LogWarning($"IO Exception while reading/writing file. This could be because file is in use. Retrying...");
+                            _logger.LogWarning("IO Exception while reading/writing file. This could be because file is in use. Retrying...");
                         }
                     }
                 }
