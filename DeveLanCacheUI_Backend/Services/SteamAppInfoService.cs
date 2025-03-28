@@ -64,7 +64,7 @@
 
                     if (changedApps.Count == 0 && previousChangeNumber - _currentChangeNumber >= 1000)
                     {
-                        _logger.LogWarning($"No changes obtained from Steam for changelist {previousChangeNumber} -> {_currentChangeNumber}. This is usually because the changeSet we had was too old. Falling back to re-obtain all apps.");
+                        _logger.LogWarning("No changes obtained from Steam for changelist {PreviousChangeNumber} -> {CurrentChangeNumber}. This is usually because the changeSet we had was too old. Falling back to re-obtain all apps.", previousChangeNumber, _currentChangeNumber);
                         _currentChangeNumber = 0;
                         continue;
                     }
@@ -72,8 +72,7 @@
 
                 if (changedApps.Any())
                 {
-                    _logger.LogInformation($"Changelist {previousChangeNumber} -> " +
-                                           $"{_currentChangeNumber} ({changedApps.Count} apps)");
+                    _logger.LogInformation("Changelist {PreviousChangeNumber} -> {CurrentChangeNumber} ({ChangedAppsCount} apps)", previousChangeNumber, _currentChangeNumber, changedApps.Count);
                 }
 
 
@@ -82,7 +81,7 @@
                     .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                     (exception, timeSpan, context) =>
                     {
-                        _logger.LogWarning($"An error occurred while trying to save changes: {exception.Message}");
+                        _logger.LogWarning("An error occurred while trying to save changes: {Message}", exception.Message);
                     });
 
                 int totalDepotsProcessed = 0;
@@ -121,7 +120,7 @@
                             }
                             //Save changes
                             await dbContext.SaveChangesAsync();
-                            _logger.LogInformation($"Depots Processed: {totalDepotsProcessed}/???? Apps Processed: {i + currentBatch.Count}/{changedApps.Count}. Updated {appInfos.Count - newDepots}, New {newDepots}");
+                            _logger.LogInformation("Depots Processed: {TotalDepotsProcessed}/???? Apps Processed: {AppsProcessed}/{ChangedAppsCount}. Updated {UpdatedCount}, New {NewCount}", totalDepotsProcessed, i + currentBatch.Count, changedApps.Count, appInfos.Count - newDepots, newDepots);
                         }
                     });
                 }

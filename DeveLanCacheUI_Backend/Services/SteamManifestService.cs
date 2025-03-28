@@ -25,7 +25,7 @@
 
             if (!lanCacheLogEntryRaw.Request.Contains("/manifest/") || lanCacheLogEntryRaw.DownloadIdentifier == null)
             {
-                _logger.LogError($"Code bug: Trying to download manifest that isn't actually a manifest: {lanCacheLogEntryRaw.OriginalLogLine}");
+                _logger.LogError("Code bug: Trying to download manifest that isn't actually a manifest: {OriginalLogLine}", lanCacheLogEntryRaw.OriginalLogLine);
                 return;
             }
 
@@ -36,7 +36,7 @@
                     .FallbackAsync(async (ct) =>
                     {
                         await Task.CompletedTask;
-                        _logger.LogInformation($"Manifest saving: All retries failed, skipping...");
+                        _logger.LogInformation("Manifest saving: All retries failed, skipping...");
                     });
 
                 var retryPolicy = Policy
@@ -44,7 +44,7 @@
                    .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                    (exception, timeSpan, context) =>
                    {
-                       _logger.LogInformation($"Manifest saving: An error occurred while trying to save changes: {exception.Message}");
+                       _logger.LogInformation("Manifest saving: An error occurred while trying to save changes: {Message}", exception.Message);
                    });
 
                 await fallbackPolicy.WrapAsync(retryPolicy).ExecuteAsync(async () =>
@@ -90,7 +90,7 @@
 
                             if (!manifestResponse.IsSuccessStatusCode)
                             {
-                                _logger.LogWarning($"Warning: Tried to obtain manifest for: {lanCacheLogEntryRaw.DownloadIdentifier} but status code was: {manifestResponse.StatusCode}");
+                                _logger.LogWarning("Warning: Tried to obtain manifest for: {DownloadIdentifier} but status code was: {StatusCode}", lanCacheLogEntryRaw.DownloadIdentifier, manifestResponse.StatusCode);
                                 return;
                             }
                             var manifestBytes = await manifestResponse.Content.ReadAsByteArrayAsync();
@@ -100,7 +100,7 @@
 
                             if (dbManifest == null)
                             {
-                                _logger.LogWarning($"Could not get manifest for depot: {lanCacheLogEntryRaw.DownloadIdentifier}");
+                                _logger.LogWarning("Could not get manifest for depot: {DownloadIdentifier}", lanCacheLogEntryRaw.DownloadIdentifier);
                                 return;
                             }
 
@@ -108,12 +108,12 @@
                             if (dbValue != null)
                             {
                                 dbContext.Entry(dbValue).CurrentValues.SetValues(dbManifest);
-                                _logger.LogInformation($"Updated manifest for {lanCacheLogEntryRaw.DownloadIdentifier}");
+                                _logger.LogInformation("Updated manifest for {DownloadIdentifier}", lanCacheLogEntryRaw.DownloadIdentifier);
                             }
                             else
                             {
                                 await dbContext.SteamManifests.AddAsync(dbManifest);
-                                _logger.LogInformation($"Added manifest for {lanCacheLogEntryRaw.DownloadIdentifier}");
+                                _logger.LogInformation("Added manifest for {DownloadIdentifier}", lanCacheLogEntryRaw.DownloadIdentifier);
                             }
 
                             await File.WriteAllBytesAsync(fullPath, manifestBytes);
