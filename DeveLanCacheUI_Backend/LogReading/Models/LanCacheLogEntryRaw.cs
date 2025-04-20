@@ -69,7 +69,16 @@
             }
             else if (CacheIdentifier == "epicgames")
             {
-                DownloadIdentifier = "unknown";
+                var urlPart = Request.Split(' ')[1];
+                var splittedUrl = urlPart.Split('/');
+                if (splittedUrl[1] == "Builds")
+                {
+                    DownloadIdentifier = splittedUrl[2];
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Could not parse epicgamesProjectID from {Request}");
+                }
             }
             else if (CacheIdentifier == "riot")
             {
