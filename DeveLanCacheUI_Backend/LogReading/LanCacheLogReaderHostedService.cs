@@ -1,5 +1,12 @@
 ﻿using DbContext = DeveLanCacheUI_Backend.Db.DeveLanCacheUIDbContext;
 
+using System;
+using System.IO;
+using System.IO.Compression;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using ZstdNet;
 namespace DeveLanCacheUI_Backend.LogReading
 {
     public class LanCacheLogReaderHostedService : BackgroundService
@@ -86,10 +93,15 @@ namespace DeveLanCacheUI_Backend.LogReading
                 throw new NullReferenceException("LanCacheLogsDirectory == null, please ensure the LanCacheLogsDirectory ENVIRONMENT_VARIABLE is filled in");
             }
             var accessLogFilePath = Path.Combine(logFilePath, "access.log");
+            // Read rotated (historical) logs: access.log.N, access.log.N.gz, access.log.N.zst
+            var historicalLogLines = ReadHistoricalLogLines(logFilePath);
+                // Read rotated (historical) logs: access.log.N, access.log.N.gz, access.log.N.zst
+                var historicalLogLines = ReadHistoricalLogLines(logFilePath);
 
             using (var fileStream = new FileStream(accessLogFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
-                var allLogLines = TailFrom2(fileStream, stoppingToken);
+                var realTimeLines = TailFrom2(fileStream, stoppingToken);
+                    var allLogLines = historicalLogLines.Concat(realTimeLines);
                 var parsedLogLines = allLogLines.Select(t => t == null ? null : LanCacheLogLineParser.ParseLogEntry(t));
                 var batches = Batch2(parsedLogLines, 5000, oldestLog);
 
@@ -327,6 +339,67 @@ namespace DeveLanCacheUI_Backend.LogReading
                         Array.Copy(buffer, searchStartIndex, lineBuffer, leftoverBuffer.Count, lineEndIndex - searchStartIndex);
                     }
 
+        private IEnumerable<string> ReadHistoricalLogLines(string logDirectory)
+        {
+            if (!Directory.Exists(logDirectory)) yield break;
+            var files = Directory.GetFiles(logDirectory, "access.log*")
+                .Where(f => Path.GetFileName(f) != "access.log")
+                .Select(f => {
+                    var name = Path.GetFileName(f)!;
+                    var after = name.Substring("access.log".Length).TrimStart('.');
+                    var parts = after.Split('.');
+                    if (int.TryParse(parts[0], out int version)) return (path: f, version);
+                    return (path: f, version: -1);
+                })
+                .Where(x => x.version >= 1)
+                .OrderBy(x => x.version)
+                .Select(x => x.path);
+            foreach (var file in files)
+            {
+                var ext = Path.GetExtension(file).ToLowerInvariant();
+                try
+                {
+                    if (ext == ".gz")
+                    {
+                        using var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                        using var gz = new System.IO.Compression.GZipStream(fs, System.IO.Compression.CompressionMode.Decompress);
+                        using var sr = new StreamReader(gz);
+                        string? line;
+                        while ((line = sr.ReadLine()) != null)
+                            yield return line;
+                    }
+                    else if (ext == ".zst")
+                    {
+                        try
+                        {
+                            using var fsZ = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                            var dctx = new ZstdNet.DecompressionContext();
+                            byte[] decompressed = dctx.Unwrap(fsZ);
+                            using var msd = new MemoryStream(decompressed);
+                            using var sr2 = new StreamReader(msd);
+                            string? ln;
+                            while ((ln = sr2.ReadLine()) != null)
+                                yield return ln;
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error decompressing .zst historical log file {File}", file);
+                        }
+                    }
+                    else
+                    {
+                        using var sr = new StreamReader(new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
+                        string? line;
+                        while ((line = sr.ReadLine()) != null)
+                            yield return line;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error reading historical log file {File}", file);
+                }
+            }
+        }
                     TotalBytesRead += lineBuffer.Length + (hasRAtTheEnd ? 1 : 0) + 1;
                     yield return Encoding.UTF8.GetString(lineBuffer);
 
