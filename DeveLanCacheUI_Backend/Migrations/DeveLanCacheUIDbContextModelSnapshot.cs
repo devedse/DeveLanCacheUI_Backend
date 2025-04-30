@@ -15,7 +15,7 @@ namespace DeveLanCacheUI_Backend.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "7.0.9");
+            modelBuilder.HasAnnotation("ProductVersion", "9.0.0");
 
             modelBuilder.Entity("DeveLanCacheUI_Backend.Db.DbModels.DbDownloadEvent", b =>
                 {
@@ -50,6 +50,10 @@ namespace DeveLanCacheUI_Backend.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CacheIdentifier");
+
+                    b.HasIndex("ClientIp");
 
                     b.ToTable("DownloadEvents");
                 });
