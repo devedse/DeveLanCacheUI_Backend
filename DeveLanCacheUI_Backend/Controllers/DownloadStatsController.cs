@@ -1,13 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using DeveLanCacheUI_Backend;
-using DeveLanCacheUI_Backend.Controllers.Models;
-
 namespace DeveLanCacheUI_Backend.Controllers
 {
     [ApiController]
@@ -52,7 +42,7 @@ namespace DeveLanCacheUI_Backend.Controllers
         {
             var excludedIps = _config.ExcludedClientIps ?? Array.Empty<string>();
 
-            return await _dbContext.DownloadEvents
+            var statsQuery = await _dbContext.DownloadEvents
                 .Where(de => !excludedIps.Contains(de.ClientIp))
                 .GroupBy(de => de.ClientIp)
                 .Select(g => new DownloadStats
@@ -62,6 +52,8 @@ namespace DeveLanCacheUI_Backend.Controllers
                     TotalCacheMissBytes = g.Sum(de => de.CacheMissBytes)
                 })
                 .ToListAsync();
+
+            return statsQuery;
         }
 
         [HttpGet]
@@ -69,7 +61,7 @@ namespace DeveLanCacheUI_Backend.Controllers
         {
             var excludedIps = _config.ExcludedClientIps ?? Array.Empty<string>();
 
-            return await _dbContext.DownloadEvents
+            var statsQuery = await _dbContext.DownloadEvents
                 .Where(de => !excludedIps.Contains(de.ClientIp))
                 .GroupBy(de => de.CacheIdentifier)
                 .Select(g => new DownloadStats
@@ -79,6 +71,8 @@ namespace DeveLanCacheUI_Backend.Controllers
                     TotalCacheMissBytes = g.Sum(de => de.CacheMissBytes)
                 })
                 .ToListAsync();
+
+            return statsQuery;
         }
     }
 }
