@@ -10,12 +10,12 @@ namespace DeveLanCacheUI_Backend.Controllers
 
         public DownloadStatsController(
             DeveLanCacheUIDbContext dbContext,
-            ILogger<DownloadStatsController> logger,
-            DeveLanCacheConfiguration config)
+            DeveLanCacheConfiguration config,
+            ILogger<DownloadStatsController> logger)
         {
             _dbContext = dbContext;
-            _logger = logger;
             _config = config;
+            _logger = logger;
         }
 
         [HttpGet]
