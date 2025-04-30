@@ -71,13 +71,13 @@
             {
                 var urlPart = Request.Split(' ')[1];
                 var splittedUrl = urlPart.Split('/');
-                if (splittedUrl[1] == "Builds")
+                if (splittedUrl.Length >= 3 && splittedUrl[1] == "Builds")
                 {
                     DownloadIdentifier = splittedUrl[2];
                 }
                 else
                 {
-                    throw new InvalidOperationException($"Could not parse epicgamesProjectID from {Request}");
+                    throw new InvalidOperationException($"Could not parse epicgamesProjectID from {Request}. URL part: {urlPart}");
                 }
             }
             else if (CacheIdentifier == "riot")
