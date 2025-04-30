@@ -51,14 +51,28 @@ namespace DeveLanCacheUI_Backend.Services.OriginalDepotEnricher
 
                 if (shouldDownload.NewVersionAvailable)
                 {
-                    await GoDownload(depotFileDirectory, shouldDownload);
+                    var createdFileName = await GoDownload(depotFileDirectory, shouldDownload);
+
+                    //Remove all other csv files in DepotDir except this one
+                    var depotFiles = Directory.GetFiles(depotFileDirectory).Where(t => Path.GetExtension(t).Equals(".csv", StringComparison.OrdinalIgnoreCase) && !t.EndsWith(createdFileName, StringComparison.OrdinalIgnoreCase));
+                    foreach (var depotFile in depotFiles)
+                    {
+                        try
+                        {
+                            File.Delete(depotFile);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning("Could not delete depot file: {DepotFile}, exception: {Exception}", depotFile, ex);
+                        }
+                    }
                 }
 
                 await Task.Delay(TimeSpan.FromHours(1));
             }
         }
 
-        private async Task GoDownload(string depotFileDirectory, (bool NewVersionAvailable, Version? LatestVersion, string? DownloadUrl) shouldDownload)
+        private async Task<string?> GoDownload(string depotFileDirectory, (bool NewVersionAvailable, Version? LatestVersion, string? DownloadUrl) shouldDownload)
         {
             _logger.LogInformation("Detected that new version '{NewVersionAvailable}' of Depot File is available, so downloading: {DownloadUrl}...", shouldDownload.NewVersionAvailable, shouldDownload.DownloadUrl);
 
@@ -66,7 +80,7 @@ namespace DeveLanCacheUI_Backend.Services.OriginalDepotEnricher
             if (!downloadedCsv.IsSuccessStatusCode)
             {
                 _logger.LogWarning("Could not obtain {Url}: {StatusCode}, {ReasonPhrase}", DeveLanCacheUISteamDepotFinderLatestUrl, downloadedCsv.StatusCode, downloadedCsv.ReasonPhrase);
-                return;
+                return null;
             }
 
             var bytes = await downloadedCsv.Content.ReadAsByteArrayAsync();
@@ -94,6 +108,7 @@ namespace DeveLanCacheUI_Backend.Services.OriginalDepotEnricher
                 }
                 await dbContext.SaveChangesAsync();
             }
+            return fileName;
         }
 
         private async Task<(bool NewVersionAvailable, Version? LatestVersion, string? DownloadUrl)> NewDepotFileAvailable()
