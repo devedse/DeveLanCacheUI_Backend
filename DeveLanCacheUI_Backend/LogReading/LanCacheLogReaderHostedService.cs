@@ -9,7 +9,6 @@ namespace DeveLanCacheUI_Backend.LogReading
 
         private readonly IServiceProvider _services;
         private readonly DeveLanCacheConfiguration _deveLanCacheConfiguration;
-        private readonly IHubContext<LanCacheHub> _lanCacheHubContext;
         private readonly SteamManifestService _steamManifestService;
         private readonly ILogger<LanCacheLogReaderHostedService> _logger;
 
@@ -44,13 +43,11 @@ namespace DeveLanCacheUI_Backend.LogReading
 
         public LanCacheLogReaderHostedService(IServiceProvider services,
             DeveLanCacheConfiguration deveLanCacheConfiguration,
-            IHubContext<LanCacheHub> lanCacheHubContext,
             SteamManifestService steamManifestService,
             ILogger<LanCacheLogReaderHostedService> logger)
         {
             _services = services;
             _deveLanCacheConfiguration = deveLanCacheConfiguration;
-            _lanCacheHubContext = lanCacheHubContext;
             _steamManifestService = steamManifestService;
             _logger = logger;
         }
