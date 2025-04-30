@@ -112,6 +112,7 @@ services:
       - LANG=en_GB.UTF-8
       - Feature_DirectSteamIntegration=true
       - Feature_SkipLinesBasedOnBytesRead=true
+      - ExcludedClientIps=192.168.1.12,192.168.1.13
     volumes:
       - "/home/pi/dockercomposers/develancacheui/backend:/var/develancacheuidata"
       - "/mnt/mynas/DockerComposers/lancache/logs:/var/develancacheui/lancachelogs:ro"
@@ -161,6 +162,7 @@ This should now all works quite neatly, if it doesn't, let me know in a github i
 | LANG | Set this to your language | ?? |
 | Feature_DirectSteamIntegration | When false, the backend will download a .CSV file with all depot => steam game mappings (from: https://github.com/devedse/DeveLanCacheUI_SteamDepotFinder_Runner/releases). When true, the tool wil generate this itself / keep it up to date. I would suggest turning this on. | false (for now) |
 | Feature_SkipLinesBasedOnBytesRead | When false, it will re-read through the whole file on startup. When true, it tries to be smart and start reading from where it last left off. I would suggest turning this on. | false (for now) |
+| ExcludedClientIps | A comma separated list of IP addresses to exclude in the downloads pages | |
 
 **Volume Mounts Backend**
 

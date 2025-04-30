@@ -21,7 +21,7 @@ namespace DeveLanCacheUI_Backend.Controllers
         [HttpGet]
         public async Task<DownloadStats> GetTotalDownloadStats()
         {
-            var excludedIps = _config.ExcludedClientIps ?? Array.Empty<string>();
+            var excludedIps = _config.ExcludedClientIpsArray ?? Array.Empty<string>();
 
             var totalStats = await _dbContext.DownloadEvents
                 .Where(de => !excludedIps.Contains(de.ClientIp))
@@ -40,7 +40,7 @@ namespace DeveLanCacheUI_Backend.Controllers
         [HttpGet]
         public async Task<IEnumerable<DownloadStats>> GetDownloadStatsPerClient()
         {
-            var excludedIps = _config.ExcludedClientIps ?? Array.Empty<string>();
+            var excludedIps = _config.ExcludedClientIpsArray ?? Array.Empty<string>();
 
             var statsQuery = await _dbContext.DownloadEvents
                 .Where(de => !excludedIps.Contains(de.ClientIp))
@@ -59,7 +59,7 @@ namespace DeveLanCacheUI_Backend.Controllers
         [HttpGet]
         public async Task<IEnumerable<DownloadStats>> GetDownloadStatsPerService()
         {
-            var excludedIps = _config.ExcludedClientIps ?? Array.Empty<string>();
+            var excludedIps = _config.ExcludedClientIpsArray ?? Array.Empty<string>();
 
             var statsQuery = await _dbContext.DownloadEvents
                 .Where(de => !excludedIps.Contains(de.ClientIp))

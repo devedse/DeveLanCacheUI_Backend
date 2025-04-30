@@ -35,7 +35,7 @@ namespace DeveLanCacheUI_Backend.Controllers
 
         private async Task<IEnumerable<DownloadEvent>> GetFilteredBySkipAndCountInternal(int skip, int count, string? filter = null)
         {
-            var excludedIps = _config.ExcludedClientIps ?? Array.Empty<string>();
+            var excludedIps = _config.ExcludedClientIpsArray ?? Array.Empty<string>();
 
             IQueryable<DbDownloadEvent> tmpResult = _dbContext.DownloadEvents;
             
