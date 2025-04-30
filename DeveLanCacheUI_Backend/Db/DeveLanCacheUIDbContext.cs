@@ -16,6 +16,12 @@
         {
             base.OnModelCreating(modelBuilder);
 
+            modelBuilder.Entity<DbDownloadEvent>()
+                        .HasIndex(t => t.ClientIp);
+
+            modelBuilder.Entity<DbDownloadEvent>()
+                        .HasIndex(t => t.CacheIdentifier);
+
             modelBuilder.Entity<DbSteamDepot>()
                         .HasKey(pc => new { pc.SteamDepotId, pc.SteamAppId });
         }

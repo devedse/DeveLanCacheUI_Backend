@@ -6,12 +6,18 @@ namespace DeveLanCacheUI_Backend.Controllers
     {
         private readonly DeveLanCacheUIDbContext _dbContext;
         private readonly ISteamAppObtainerService _steamAppObtainerService;
+        private readonly DeveLanCacheConfiguration _config;
         private readonly ILogger<DownloadEventsController> _logger;
 
-        public DownloadEventsController(DeveLanCacheUIDbContext dbContext, ISteamAppObtainerService steamAppObtainerService, ILogger<DownloadEventsController> logger)
+        public DownloadEventsController(
+            DeveLanCacheUIDbContext dbContext,
+            ISteamAppObtainerService steamAppObtainerService,
+            DeveLanCacheConfiguration config,
+            ILogger<DownloadEventsController> logger)
         {
             _dbContext = dbContext;
             _steamAppObtainerService = steamAppObtainerService;
+            _config = config;
             _logger = logger;
         }
 
@@ -29,7 +35,12 @@ namespace DeveLanCacheUI_Backend.Controllers
 
         private async Task<IEnumerable<DownloadEvent>> GetFilteredBySkipAndCountInternal(int skip, int count, string? filter = null)
         {
+            var excludedIps = _config.ExcludedClientIpsArray ?? Array.Empty<string>();
+
             IQueryable<DbDownloadEvent> tmpResult = _dbContext.DownloadEvents;
+            
+            tmpResult = tmpResult.Where(t => !excludedIps.Contains(t.ClientIp));
+
             if (filter != null)
             {
                 tmpResult = tmpResult.Where(t => t.CacheIdentifier == filter);
