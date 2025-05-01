@@ -9,6 +9,7 @@ on:
 
 jobs:
   generate_version_number:
+    if: github.event_name == 'push' || github.event.workflow_run.conclusion == 'success'
     permissions:
       contents: write
     runs-on: ubuntu-latest
