@@ -67,3 +67,19 @@ jobs:
       
       - name: Test
         run: dotnet test DeveLanCacheUI_Backend.sln -c Release --no-build --verbosity normal
+
+  log_pr_info:
+    if: github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log PR event context
+        run: |
+          echo "PR Number: ${{ github.event.pull_request.number }}"
+          echo "PR Title: ${{ github.event.pull_request.title }}"
+          echo "PR Head Repo: ${{ github.event.pull_request.head.repo.full_name }}"
+          echo "PR Head Ref: ${{ github.event.pull_request.head.ref }}"
+          echo "PR Base Repo: ${{ github.event.pull_request.base.repo.full_name }}"
+          echo "PR Base Ref: ${{ github.event.pull_request.base.ref }}"
+          echo "PR User Login: ${{ github.event.pull_request.user.login }}"
+          echo "Full github.event context:"
+          echo '${{ toJson(github.event) }}'
