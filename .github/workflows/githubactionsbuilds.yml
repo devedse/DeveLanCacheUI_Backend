@@ -59,11 +59,9 @@ jobs:
         BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | sed 's/\//-/g')
         echo parsed branch name: ${BRANCH_NAME}
 
-        # Default tag logic
         TAGS=""
         if [[ "${{ github.event_name }}" == 'workflow_run' ]]; then
-          # Extract PR username and branch name from workflow_run payload
-          PR_USERNAME=$(echo "${{ github.event.workflow_run.head_commit.author.username }}" | tr '[:upper:]' '[:lower:]')
+          PR_USERNAME=$(echo "${{ github.event.workflow_run.head_repository.owner.login }}" | tr '[:upper:]' '[:lower:]')
           PR_BRANCH=$(echo "${{ github.event.workflow_run.head_branch }}" | sed 's/\//-/g')
           echo "PR_USERNAME: $PR_USERNAME"
           echo "PR_BRANCH: $PR_BRANCH"
@@ -205,20 +203,21 @@ jobs:
   comment-on-pr:
     needs: [build_docker, build_linux, build_windows]
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'workflow_run'
     steps:
       - name: Get PR number
         id: get_pr
         run: |
-          PR_NUMBER=$(echo "${{ github.event.pull_request.number }}")
+          PR_NUMBER=$(echo "${{ github.event.workflow_run.pull_requests[0].number }}")
           echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
       - name: Create comment body
         id: comment_body
         run: |
           RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          IMAGE_TAG="${{ steps.tags.outputs.tags }}"
           BODY=":rocket: [Full build workflow run]($RUN_URL) has completed."
           if [ "${{ needs.build_docker.result }}" = "success" ] && [ "${{ needs.build_linux.result }}" = "success" ] && [ "${{ needs.build_windows.result }}" = "success" ]; then
-            BODY="$BODY\n\n:whale: Docker image: https://hub.docker.com/r/devedse/develancacheui_backend"
+            BODY="$BODY\n\n:whale: Docker image: https://hub.docker.com/r/devedse/develancacheui_backend\nTagged as: $IMAGE_TAG"
           fi
           echo "body<<EOF" >> $GITHUB_OUTPUT
           echo "$BODY" >> $GITHUB_OUTPUT
