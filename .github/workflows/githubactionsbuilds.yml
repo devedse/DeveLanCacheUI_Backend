@@ -2,6 +2,10 @@ name: GitHubActionsBuilds
 
 on:
   push:
+  workflow_run:
+    workflows: ["PR Builds"]   # must match the `name:` field in pr-fork-build.yml
+    types:
+      - completed              # fire when that workflow finishes
 
 jobs:
   generate_version_number:
