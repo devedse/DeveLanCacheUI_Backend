@@ -1,6 +1,8 @@
 name: GitHubActionsBuilds
 
-on: push
+on:
+  push:
+  workflow_dispatch:
 
 jobs:
   generate_version_number:
