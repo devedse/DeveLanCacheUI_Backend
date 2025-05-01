@@ -23,7 +23,6 @@ jobs:
           docker buildx build \
             --file DeveLanCacheUI_Backend/Dockerfile \
             --platform linux/arm64,linux/amd64 \
-            --load \
             -t develancacheui_backend:test-pr .
   
   build_linux:
