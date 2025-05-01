@@ -52,21 +52,33 @@ jobs:
       run: |
         VERSION=1.0.${{needs.generate_version_number.outputs.build_number}}
         echo Version: $VERSION
+        echo github.event_name: ${{ github.event_name }}
         echo github.ref: ${{ github.ref }}
         echo github.actor: ${{ github.actor }}
         echo branch name: ${GITHUB_REF#refs/heads/}
         BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | sed 's/\//-/g')
         echo parsed branch name: ${BRANCH_NAME}
 
-        echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
-
-        if [[ "${{ github.ref }}" == 'refs/heads/master' ]]; then
-          echo "TAGS=-t devedse/develancacheui_backend:${VERSION} -t devedse/develancacheui_backend:latest -t devedse/develancacheui_backend:beta_nightly" >> $GITHUB_OUTPUT
+        # Default tag logic
+        TAGS=""
+        if [[ "${{ github.event_name }}" == 'workflow_run' ]]; then
+          # Extract PR username and branch name from workflow_run payload
+          PR_USERNAME=$(echo "${{ github.event.workflow_run.head_commit.author.username }}" | tr '[:upper:]' '[:lower:]')
+          PR_BRANCH=$(echo "${{ github.event.workflow_run.head_branch }}" | sed 's/\//-/g')
+          echo "PR_USERNAME: $PR_USERNAME"
+          echo "PR_BRANCH: $PR_BRANCH"
+          TAGS="-t devedse/develancacheui_backend:pr_${PR_USERNAME}_${PR_BRANCH}"
+        elif [[ "${{ github.ref }}" == 'refs/heads/master' ]]; then
+          TAGS="-t devedse/develancacheui_backend:${VERSION} -t devedse/develancacheui_backend:latest -t devedse/develancacheui_backend:beta_nightly"
         elif [[ "${{ github.actor }}" == 'dependabot[bot]' ]]; then
-          echo "TAGS=-t devedse/develancacheui_backend:beta_${BRANCH_NAME}" >> $GITHUB_OUTPUT
+          TAGS="-t devedse/develancacheui_backend:beta_${BRANCH_NAME}"
         else 
-          echo "TAGS=-t devedse/develancacheui_backend:beta_${BRANCH_NAME} -t devedse/develancacheui_backend:beta_nightly" >> $GITHUB_OUTPUT
+          TAGS="-t devedse/develancacheui_backend:beta_${BRANCH_NAME} -t devedse/develancacheui_backend:beta_nightly"
         fi
+
+        echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+        echo "TAGS=${TAGS}" >> $GITHUB_OUTPUT
+        echo "Docker image tags: $TAGS"
     - name: Run Buildx
       run: |
         docker buildx build -f DeveLanCacheUI_Backend/Dockerfile --build-arg BUILD_VERSION=${{steps.tags.outputs.version}} --platform linux/arm64,linux/amd64 ${{steps.tags.outputs.tags}} ${{ (github.event_name != 'pull_request' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)) && '--push' || '' }} .
@@ -188,3 +200,32 @@ jobs:
   #       path: ./artifacts/DeveLanCacheUI_BackendNuGet/
   #   - name: Push NuGet
   #     run: dotnet nuget push ./artifacts/DeveLanCacheUI_BackendNuGet/DeveLanCacheUI_Backend.1.0.${{needs.generate_version_number.outputs.build_number}}.nupkg -k ${{ secrets.NUGETTOKEN }} -s https://api.nuget.org/v3/index.json
+
+
+  comment-on-pr:
+    needs: [build_docker, build_linux, build_windows]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Get PR number
+        id: get_pr
+        run: |
+          PR_NUMBER=$(echo "${{ github.event.pull_request.number }}")
+          echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+      - name: Create comment body
+        id: comment_body
+        run: |
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          BODY=":rocket: [Full build workflow run]($RUN_URL) has completed."
+          if [ "${{ needs.build_docker.result }}" = "success" ] && [ "${{ needs.build_linux.result }}" = "success" ] && [ "${{ needs.build_windows.result }}" = "success" ]; then
+            BODY="$BODY\n\n:whale: Docker image: https://hub.docker.com/r/devedse/develancacheui_backend"
+          fi
+          echo "body<<EOF" >> $GITHUB_OUTPUT
+          echo "$BODY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      - name: Comment on PR
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ steps.get_pr.outputs.pr_number }}
+          body: ${{ steps.comment_body.outputs.body }}

@@ -5,6 +5,7 @@ on:
 
 jobs:
   build_docker:
+    if: github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
@@ -26,6 +27,7 @@ jobs:
             -t develancacheui_backend:test-pr .
   
   build_linux:
+    if: github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
@@ -46,6 +48,7 @@ jobs:
         run: dotnet test DeveLanCacheUI_Backend.sln -c Release --no-build --verbosity normal
   
   build_windows:
+    if: github.event.pull_request.head.repo.full_name != github.repository
     runs-on: windows-latest
     steps:
       - name: Checkout sources
