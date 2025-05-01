@@ -2,8 +2,6 @@ name: GitHubActionsBuilds
 
 on:
   push:
-  pull_request:
-  workflow_dispatch:
 
 jobs:
   generate_version_number:
@@ -13,22 +11,11 @@ jobs:
     outputs:
       build_number: ${{ steps.buildnumber.outputs.build_number }}
     steps:
-    - name: Check repository owner
-      id: check_owner
-      run: |
-        if [ "${{ github.repository_owner }}" != "devedse" ]; then
-          echo "Not repository owner, setting build_number to 0"
-          echo "build_number=0" >> $GITHUB_OUTPUT
-        fi
     - name: Generate build number
-      if: steps.check_owner.outputs.build_number != '0'
       id: buildnumber
       uses: onyxmueller/build-tag-number@v1
       with:
         token: ${{secrets.github_token}}
-    - name: Set build_number output if not owner
-      if: steps.check_owner.outputs.build_number == '0'
-      run: echo "build_number=0" >> $GITHUB_OUTPUT
 
   build_docker:
     needs: generate_version_number
