@@ -67,11 +67,13 @@ namespace DeveLanCacheUI_Backend
             builder.Services.AddHostedService<LanCacheLogReaderHostedService>();
 
             builder.Services.AddHostedService<FrontendRefresherService>();
+            builder.Services.AddHostedService<AsyncLogEntryProcessingQueueItemsProcessorHostedService>();
 
             builder.Services.AddHttpClient();
 
             builder.Services.AddSingleton<RoboHashCache>();
             builder.Services.AddSingleton<SteamManifestService>();
+            builder.Services.AddSingleton<EpicManifestService>();
 
             if (deveLanCacheConfiguration.Feature_DirectSteamIntegration)
             {
