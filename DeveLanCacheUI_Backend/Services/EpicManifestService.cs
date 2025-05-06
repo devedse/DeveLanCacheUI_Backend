@@ -24,11 +24,14 @@ namespace DeveLanCacheUI_Backend.Services
 
         public async Task TryToDownloadManifest(LanCacheLogEntryRaw lanCacheLogEntryRaw)
         {
-            if (!lanCacheLogEntryRaw.Request.Contains("/manifest/") || lanCacheLogEntryRaw.DownloadIdentifier == null)
+            if (lanCacheLogEntryRaw.CacheIdentifier != "epicgames" || !lanCacheLogEntryRaw.Request.Contains(".manifest?"))
             {
                 _logger.LogError("Code bug: Trying to download manifest that isn't actually a manifest: {OriginalLogLine}", lanCacheLogEntryRaw.OriginalLogLine);
                 return;
             }
+
+            var theManifestUrlPart = lanCacheLogEntryRaw.Request.Split(' ', StringSplitOptions.RemoveEmptyEntries)[1];
+            var fullManifestUrl = $"http://{lanCacheLogEntryRaw.Host}{theManifestUrlPart}";
 
             var fallbackPolicy = Policy
                 .Handle<Exception>()
@@ -48,14 +51,12 @@ namespace DeveLanCacheUI_Backend.Services
 
             await fallbackPolicy.WrapAsync(retryPolicy).ExecuteAsync(async () =>
             {
-                var theManifestUrlPart = lanCacheLogEntryRaw.Request.Split(' ', StringSplitOptions.RemoveEmptyEntries)[1];
 
                 using var httpClient = _httpClientFactoryForManifestDownloads.CreateClient();
                 httpClient.DefaultRequestHeaders.Add("Host", lanCacheLogEntryRaw.Host);
-                httpClient.DefaultRequestHeaders.Add("User-Agent", "Valve/Steam HTTP Client 1.0");
+                httpClient.DefaultRequestHeaders.Add("User-Agent", lanCacheLogEntryRaw.UserAgent);
                 httpClient.DefaultRequestHeaders.Referrer = LanCacheLogReaderHostedService.SkipLogLineReferrer; //Add this to ensure we don't process this line again
-                var manifestResponse = await httpClient.GetAsync(theManifestUrlPart);
-
+                var manifestResponse = await httpClient.GetAsync(fullManifestUrl);
 
                 if (!manifestResponse.IsSuccessStatusCode)
                 {
@@ -66,7 +67,7 @@ namespace DeveLanCacheUI_Backend.Services
 
                 var parsedManifest = EpicManifestParser.EpicManifestParser.Deserialize(manifestBytes);
 
-                _logger.LogInformation("Parsed epic manifest for Launch Exe: {Manifest}", parsedManifest.Meta.LaunchExe);
+                _logger.LogInformation("Parsed LogLine from: {LogLineDateTime}, Epic Manifest for AppId: '{AppId}' AppName: '{AppName}' Launch Exe: '{Manifest}'", lanCacheLogEntryRaw.DateTime, parsedManifest.Meta.AppID, parsedManifest.Meta.AppName, parsedManifest.Meta.LaunchExe);
 
                 // Save changes happens in the caller
             });

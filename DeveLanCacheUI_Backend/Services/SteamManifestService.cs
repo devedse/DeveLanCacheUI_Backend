@@ -23,7 +23,7 @@
 
         public async Task TryToDownloadManifest(LanCacheLogEntryRaw lanCacheLogEntryRaw)
         {
-            if (!lanCacheLogEntryRaw.Request.Contains("/manifest/") || lanCacheLogEntryRaw.DownloadIdentifier == null)
+            if (lanCacheLogEntryRaw.CacheIdentifier != "steam" || !lanCacheLogEntryRaw.Request.Contains("/manifest/"))
             {
                 _logger.LogError("Code bug: Trying to download manifest that isn't actually a manifest: {OriginalLogLine}", lanCacheLogEntryRaw.OriginalLogLine);
                 return;

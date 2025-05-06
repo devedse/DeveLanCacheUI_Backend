@@ -30,7 +30,9 @@ namespace DeveLanCacheUI_Backend.LogReading
                 {
                     using var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();
 
-                    var items = await dbContext.AsyncLogEntryProcessingQueueItems.OrderBy(t => t.Id).ToListAsync(stoppingToken);
+                    // Take 1 because I think it's nicer. We could take more but then we need to do a SaveChanges inside the manifest services.
+                    // Because if you don't you're not getting the latest data.
+                    var items = await dbContext.AsyncLogEntryProcessingQueueItems.OrderBy(t => t.Id).Take(1).ToListAsync(stoppingToken);
                     if (items.Count == 0)
                     {
                         await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
