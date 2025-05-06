@@ -1,4 +1,6 @@
-﻿namespace DeveLanCacheUI_Backend.EpicManifestParser.Tests
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+namespace DeveLanCacheUI_Backend.EpicManifestParser.Tests
 {
     [TestClass]
     public sealed class EpicManifestParserTests
