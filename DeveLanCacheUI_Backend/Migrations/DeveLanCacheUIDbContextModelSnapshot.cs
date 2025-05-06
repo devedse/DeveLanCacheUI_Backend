@@ -132,7 +132,6 @@ namespace DeveLanCacheUI_Backend.Migrations
                                 .HasColumnType("INTEGER");
 
                             b1.Property<string>("BodyBytesSent")
-                                .IsRequired()
                                 .HasColumnType("TEXT");
 
                             b1.Property<long>("BodyBytesSentLong")
@@ -149,15 +148,12 @@ namespace DeveLanCacheUI_Backend.Migrations
                                 .HasColumnType("TEXT");
 
                             b1.Property<string>("ForwardedFor")
-                                .IsRequired()
                                 .HasColumnType("TEXT");
 
                             b1.Property<string>("Host")
-                                .IsRequired()
                                 .HasColumnType("TEXT");
 
                             b1.Property<string>("HttpRange")
-                                .IsRequired()
                                 .HasColumnType("TEXT");
 
                             b1.Property<string>("OriginalLogLine")
@@ -165,39 +161,30 @@ namespace DeveLanCacheUI_Backend.Migrations
                                 .HasColumnType("TEXT");
 
                             b1.Property<string>("ParseException")
-                                .IsRequired()
                                 .HasColumnType("TEXT");
 
                             b1.Property<string>("Referer")
-                                .IsRequired()
                                 .HasColumnType("TEXT");
 
                             b1.Property<string>("RemoteAddress")
-                                .IsRequired()
                                 .HasColumnType("TEXT");
 
                             b1.Property<string>("RemoteUser")
-                                .IsRequired()
                                 .HasColumnType("TEXT");
 
                             b1.Property<string>("Request")
-                                .IsRequired()
                                 .HasColumnType("TEXT");
 
                             b1.Property<string>("Status")
-                                .IsRequired()
                                 .HasColumnType("TEXT");
 
                             b1.Property<string>("TimeLocal")
-                                .IsRequired()
                                 .HasColumnType("TEXT");
 
                             b1.Property<string>("UpstreamCacheStatus")
-                                .IsRequired()
                                 .HasColumnType("TEXT");
 
                             b1.Property<string>("UserAgent")
-                                .IsRequired()
                                 .HasColumnType("TEXT");
 
                             b1.HasKey("DbAsyncLogEntryProcessingQueueItemId");

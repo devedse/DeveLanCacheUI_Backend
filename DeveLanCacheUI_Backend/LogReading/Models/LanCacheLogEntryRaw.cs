@@ -32,6 +32,7 @@
         public string HttpRange { get; init; }
 
         public required string OriginalLogLine { get; init; }
+
         public string ParseException { get; init; }
 
         public DateTime DateTime { get; private set; }
