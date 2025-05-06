@@ -2,32 +2,24 @@
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
-    <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <EnableMSTestRunner>true</EnableMSTestRunner>
-    <OutputType>Exe</OutputType>
-    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
-    <!--
-      Displays error on console in addition to the log file. Note that this feature comes with a performance impact.
-      For more information, visit https://learn.microsoft.com/dotnet/core/testing/unit-testing-platform-integration-dotnet-test#show-failure-per-test
-      -->
-    <TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>
+
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
-    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" Version="17.12.6" />
-    <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" Version="1.4.0" />
-    <PackageReference Include="MSTest" Version="3.6.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
+    <PackageReference Include="MSTest.TestAdapter" Version="3.8.3" />
+    <PackageReference Include="MSTest.TestFramework" Version="3.8.3" />
+    <PackageReference Include="coverlet.collector" Version="6.0.4">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\DeveLanCacheUI_Backend.EpicManifestParser\DeveLanCacheUI_Backend.EpicManifestParser.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting" />
   </ItemGroup>
 
   <ItemGroup>
