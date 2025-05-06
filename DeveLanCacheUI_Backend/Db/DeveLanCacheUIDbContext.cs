@@ -28,7 +28,7 @@
                         .HasKey(pc => new { pc.SteamDepotId, pc.SteamAppId });
 
             modelBuilder.Entity<DbAsyncLogEntryProcessingQueueItem>()
-                        .HasIndex(pc => pc.LanCacheLogEntryRaw);
+                        .OwnsOne(pc => pc.LanCacheLogEntryRaw);
         }
     }
 }

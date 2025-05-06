@@ -15,7 +15,18 @@ namespace DeveLanCacheUI_Backend.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.0");
+            modelBuilder.HasAnnotation("ProductVersion", "9.0.4");
+
+            modelBuilder.Entity("DeveLanCacheUI_Backend.Db.DbModels.DbAsyncLogEntryProcessingQueueItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AsyncLogEntryProcessingQueueItems");
+                });
 
             modelBuilder.Entity("DeveLanCacheUI_Backend.Db.DbModels.DbDownloadEvent", b =>
                 {
@@ -111,6 +122,94 @@ namespace DeveLanCacheUI_Backend.Migrations
                         .IsUnique();
 
                     b.ToTable("SteamManifests");
+                });
+
+            modelBuilder.Entity("DeveLanCacheUI_Backend.Db.DbModels.DbAsyncLogEntryProcessingQueueItem", b =>
+                {
+                    b.OwnsOne("DeveLanCacheUI_Backend.LogReading.Models.LanCacheLogEntryRaw", "LanCacheLogEntryRaw", b1 =>
+                        {
+                            b1.Property<int>("DbAsyncLogEntryProcessingQueueItemId")
+                                .HasColumnType("INTEGER");
+
+                            b1.Property<string>("BodyBytesSent")
+                                .IsRequired()
+                                .HasColumnType("TEXT");
+
+                            b1.Property<long>("BodyBytesSentLong")
+                                .HasColumnType("INTEGER");
+
+                            b1.Property<string>("CacheIdentifier")
+                                .IsRequired()
+                                .HasColumnType("TEXT");
+
+                            b1.Property<DateTime>("DateTime")
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("DownloadIdentifier")
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("ForwardedFor")
+                                .IsRequired()
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("Host")
+                                .IsRequired()
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("HttpRange")
+                                .IsRequired()
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("OriginalLogLine")
+                                .IsRequired()
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("ParseException")
+                                .IsRequired()
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("Referer")
+                                .IsRequired()
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("RemoteAddress")
+                                .IsRequired()
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("RemoteUser")
+                                .IsRequired()
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("Request")
+                                .IsRequired()
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("Status")
+                                .IsRequired()
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("TimeLocal")
+                                .IsRequired()
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("UpstreamCacheStatus")
+                                .IsRequired()
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("UserAgent")
+                                .IsRequired()
+                                .HasColumnType("TEXT");
+
+                            b1.HasKey("DbAsyncLogEntryProcessingQueueItemId");
+
+                            b1.ToTable("AsyncLogEntryProcessingQueueItems");
+
+                            b1.WithOwner()
+                                .HasForeignKey("DbAsyncLogEntryProcessingQueueItemId");
+                        });
+
+                    b.Navigation("LanCacheLogEntryRaw")
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }
