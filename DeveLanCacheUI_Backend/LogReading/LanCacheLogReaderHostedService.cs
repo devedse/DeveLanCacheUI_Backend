@@ -9,7 +9,6 @@ namespace DeveLanCacheUI_Backend.LogReading
 
         private readonly IServiceProvider _services;
         private readonly DeveLanCacheConfiguration _deveLanCacheConfiguration;
-        private readonly SteamManifestService _steamManifestService;
         private readonly ILogger<LanCacheLogReaderHostedService> _logger;
 
         /// <summary>
@@ -43,12 +42,10 @@ namespace DeveLanCacheUI_Backend.LogReading
 
         public LanCacheLogReaderHostedService(IServiceProvider services,
             DeveLanCacheConfiguration deveLanCacheConfiguration,
-            SteamManifestService steamManifestService,
             ILogger<LanCacheLogReaderHostedService> logger)
         {
             _services = services;
             _deveLanCacheConfiguration = deveLanCacheConfiguration;
-            _steamManifestService = steamManifestService;
             _logger = logger;
         }
 
@@ -125,11 +122,23 @@ namespace DeveLanCacheUI_Backend.LogReading
                                 {
                                     continue;
                                 }
-                                if (lanCacheLogLine.CacheIdentifier == "steam" && lanCacheLogLine.Request.Contains("/manifest/") && DateTime.Now < lanCacheLogLine.DateTime.AddDays(14))
+
+                                if (
+                                    (lanCacheLogLine.CacheIdentifier == "steam" && lanCacheLogLine.Request.Contains("/manifest/")) ||
+                                    (lanCacheLogLine.CacheIdentifier == "epicgames" && lanCacheLogLine.Request.Contains(".manifest?"))
+                                    )
                                 {
-                                    _logger.LogInformation("Found manifest for Depot: {DownloadIdentifier}", lanCacheLogLine.DownloadIdentifier);
-                                    var ttt = lanCacheLogLine;
-                                    _steamManifestService.TryToDownloadManifest(ttt);
+                                    if (DateTime.Now < lanCacheLogLine.DateTime.AddDays(14))
+                                    {
+                                        // We found a manifest. This contains more information about the download. We'll process these asynchronously
+                                        // since it requires downloading and parsing the manifest file.
+                                        _logger.LogInformation("Found manifest for download: {DownloadIdentifier}", lanCacheLogLine.DownloadIdentifier);
+                                        var itemToProcessAsynchronously = new DbAsyncLogEntryProcessingQueueItem()
+                                        {
+                                            LanCacheLogEntryRaw = lanCacheLogLine
+                                        };
+                                        dbContext.AsyncLogEntryProcessingQueueItems.Add(itemToProcessAsynchronously);
+                                    }
                                 }
 
                                 var cacheKey = $"{lanCacheLogLine.CacheIdentifier}_||_{lanCacheLogLine.DownloadIdentifier}_||_{lanCacheLogLine.RemoteAddress}";

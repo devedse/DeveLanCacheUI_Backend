@@ -6,7 +6,7 @@
         public DbSet<DbDownloadEvent> DownloadEvents => Set<DbDownloadEvent>();
         public DbSet<DbSetting> Settings => Set<DbSetting>();
         public DbSet<DbSteamManifest> SteamManifests => Set<DbSteamManifest>();
-        public DbSet<DbAsyncLogEntryProcessingQueueItem> ManifestAsyncDownloadProcessingQueueItems => Set<DbAsyncLogEntryProcessingQueueItem>();
+        public DbSet<DbAsyncLogEntryProcessingQueueItem> AsyncLogEntryProcessingQueueItems => Set<DbAsyncLogEntryProcessingQueueItem>();
 
 
         public DeveLanCacheUIDbContext(DbContextOptions options) : base(options)
