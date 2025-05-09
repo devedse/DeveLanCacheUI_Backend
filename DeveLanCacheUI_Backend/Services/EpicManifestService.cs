@@ -30,6 +30,13 @@ namespace DeveLanCacheUI_Backend.Services
                 return;
             }
 
+            var firstItem = await _dbContext.EpicManifests.FirstOrDefaultAsync(t => t.DownloadIdentifier == lanCacheLogEntryRaw.DownloadIdentifier);
+            if (firstItem != null)
+            {
+                return;
+            }
+
+
             var theManifestUrlPart = lanCacheLogEntryRaw.Request.Split(' ', StringSplitOptions.RemoveEmptyEntries)[1];
             var fullManifestUrl = $"http://{lanCacheLogEntryRaw.Host}{theManifestUrlPart}";
 
@@ -69,7 +76,18 @@ namespace DeveLanCacheUI_Backend.Services
 
                 _logger.LogInformation("Parsed LogLine from: {LogLineDateTime}, Epic Manifest for AppId: '{AppId}' AppName: '{AppName}' Launch Exe: '{Manifest}'", lanCacheLogEntryRaw.DateTime, parsedManifest.Meta.AppID, parsedManifest.Meta.AppName, parsedManifest.Meta.LaunchExe);
 
-                // Save changes happens in the caller
+                var epicManifest = new DbEpicManifest()
+                {
+                    Name = Path.GetFileNameWithoutExtension(parsedManifest.Meta.LaunchExe),
+                    DownloadIdentifier = lanCacheLogEntryRaw.DownloadIdentifier,
+                    CreationTime = DateTime.UtcNow,
+                    ManifestBytesSize = (ulong)manifestBytes.Length,
+                    TotalCompressedSize = (ulong)parsedManifest.TotalDownloadSize,
+                    TotalUncompressedSize = (ulong)parsedManifest.TotalBuildSize
+                };
+
+                await _dbContext.EpicManifests.AddAsync(epicManifest);
+                await _dbContext.SaveChangesAsync();
             });
         }
     }

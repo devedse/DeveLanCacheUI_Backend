@@ -16,6 +16,8 @@ namespace DeveLanCacheUI_Backend.EpicManifestParser.Tests
 
             // Assert
             Assert.AreEqual("Super Space Club.exe", manifest.Meta.LaunchExe);
+            Assert.AreEqual("eccf14e21df84712a54d2b89b20d15f9", manifest.Meta.AppName);
+            Assert.AreEqual("9lEUV1B3tU-lv8teGLbqaQ", manifest.Meta.BuildId);
         }
     }
 }
