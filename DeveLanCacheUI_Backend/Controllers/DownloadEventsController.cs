@@ -78,21 +78,24 @@ namespace DeveLanCacheUI_Backend.Controllers
                 var firstItemInGroup = group
                   .FirstOrDefault(item => item.steamDepot != null)
                   ?? group.FirstOrDefault(item => item.epicManifest != null)
-                  ?? group.First();
+                  ?? group.FirstOrDefault();
 
                 var downloadInfo = new DownloadInfo();
 
                 if (group.Key.CacheIdentifier == "steam")
                 {
-                    downloadInfo.Name = _steamAppObtainerService.GetSteamAppById(firstItemInGroup.steamDepot.SteamAppId)?.name;
-                    downloadInfo.ClickUrl = $"https://steamdb.info/depot/{group.Key.DownloadIdentifierString}/";
-                    downloadInfo.ImageUrl = $"https://cdn.cloudflare.steamstatic.com/steam/apps/{firstItemInGroup.steamDepot.SteamAppId}/header.jpg";
-                    downloadInfo.TotalBytes = firstItemInGroup.steamManifest?.TotalCompressedSize ?? 0 + firstItemInGroup.steamManifest?.ManifestBytesSize ?? 0;
+                    downloadInfo.Name = _steamAppObtainerService.GetSteamAppById(firstItemInGroup?.steamDepot?.SteamAppId)?.name;
+                    downloadInfo.AppUrl = $"https://steamdb.info/app/{firstItemInGroup?.steamDepot?.SteamAppId}/";
+                    downloadInfo.AppImageUrl = $"https://cdn.cloudflare.steamstatic.com/steam/apps/{firstItemInGroup?.steamDepot?.SteamAppId}/header.jpg";
+                    downloadInfo.DownloadIdentifier = group.Key.DownloadIdentifierString;
+                    downloadInfo.DownloadIdentifierUrl = $"https://steamdb.info/depot/{group.Key.DownloadIdentifierString}";
+                    //downloadInfo.DownloadIdentifierImageUrl = $"https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/{group.Key.DownloadIdentifierString}/header.jpg";
+                    downloadInfo.TotalBytes = firstItemInGroup?.steamManifest?.TotalCompressedSize ?? 0 + firstItemInGroup?.steamManifest?.ManifestBytesSize ?? 0;
                 }
                 else if (group.Key.CacheIdentifier == "epicgames")
                 {
-                    downloadInfo.Name = firstItemInGroup.epicManifest?.Name;
-                    downloadInfo.TotalBytes = firstItemInGroup.epicManifest?.TotalCompressedSize ?? 0 + firstItemInGroup.epicManifest?.ManifestBytesSize ?? 0;
+                    downloadInfo.Name = firstItemInGroup?.epicManifest?.Name;
+                    downloadInfo.TotalBytes = firstItemInGroup?.epicManifest?.TotalCompressedSize ?? 0 + firstItemInGroup?.epicManifest?.ManifestBytesSize ?? 0;
                 }
 
                 var downloadEvent = new DownloadEvent

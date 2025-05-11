@@ -69,6 +69,32 @@ namespace DeveLanCacheUI_Backend.Migrations
                     b.ToTable("DownloadEvents");
                 });
 
+            modelBuilder.Entity("DeveLanCacheUI_Backend.Db.DbModels.DbEpicManifest", b =>
+                {
+                    b.Property<string>("DownloadIdentifier")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<ulong>("ManifestBytesSize")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<ulong>("TotalCompressedSize")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<ulong>("TotalUncompressedSize")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("DownloadIdentifier", "CreationTime");
+
+                    b.ToTable("EpicManifests");
+                });
+
             modelBuilder.Entity("DeveLanCacheUI_Backend.Db.DbModels.DbSetting", b =>
                 {
                     b.Property<string>("Key")

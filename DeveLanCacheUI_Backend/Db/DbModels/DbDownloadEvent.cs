@@ -8,6 +8,7 @@
         //steam/epicgames/wsus/epicgames
         public required string CacheIdentifier { get; set; }
 
+        //Ideally only use this for faster Joins, all other code should use the DownloadIdentifierString
         public uint? DownloadIdentifier { get; set; }
         public string? DownloadIdentifierString { get; set; }
 
