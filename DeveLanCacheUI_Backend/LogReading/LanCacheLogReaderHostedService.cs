@@ -118,7 +118,7 @@ namespace DeveLanCacheUI_Backend.LogReading
 
                             foreach (var lanCacheLogLine in filteredLogLines)
                             {
-                                if (lanCacheLogLine.CacheIdentifier == "steam" && ExcludedAppIds.Contains(lanCacheLogLine.DownloadIdentifier))
+                                if (lanCacheLogLine.CacheIdentifier == "steam" && lanCacheLogLine.DownloadIdentifier != null && ExcludedAppIds.Contains(lanCacheLogLine.DownloadIdentifier))
                                 {
                                     continue;
                                 }
@@ -257,39 +257,39 @@ namespace DeveLanCacheUI_Backend.LogReading
             }
         }
 
-        static IEnumerable<string> TailFrom(string file, CancellationToken stoppingToken)
-        {
-            using (var reader = File.OpenText(file))
-            {
-                // go to end - if the next line is commented out, all the lines from the beginning is returned
-                // reader.BaseStream.Seek(0, SeekOrigin.End);
-                while (true)
-                {
-                    stoppingToken.ThrowIfCancellationRequested();
+        //static IEnumerable<string> TailFrom(string file, CancellationToken stoppingToken)
+        //{
+        //    using (var reader = File.OpenText(file))
+        //    {
+        //        // go to end - if the next line is commented out, all the lines from the beginning is returned
+        //        // reader.BaseStream.Seek(0, SeekOrigin.End);
+        //        while (true)
+        //        {
+        //            stoppingToken.ThrowIfCancellationRequested();
 
-                    string? line = reader.ReadLine();
-                    if (reader.BaseStream.Length < reader.BaseStream.Position)
-                    {
-                        Console.WriteLine($"Uhh: {reader.BaseStream.Length} < {reader.BaseStream.Position}");
-                        //reader.BaseStream.Seek(0, SeekOrigin.Begin);
+        //            string? line = reader.ReadLine();
+        //            if (reader.BaseStream.Length < reader.BaseStream.Position)
+        //            {
+        //                Console.WriteLine($"Uhh: {reader.BaseStream.Length} < {reader.BaseStream.Position}");
+        //                //reader.BaseStream.Seek(0, SeekOrigin.Begin);
 
-                    }
+        //            }
 
-                    if (line != null)
-                    {
-                        yield return line;
-                    }
-                    else
-                    {
-                        yield return null;
-                    }
-                }
-            }
-        }
+        //            if (line != null)
+        //            {
+        //                yield return line;
+        //            }
+        //            else
+        //            {
+        //                yield return null;
+        //            }
+        //        }
+        //    }
+        //}
 
         public long TotalBytesRead { get; set; }
 
-        public IEnumerable<string> TailFrom2(Stream inputStream, CancellationToken stoppingToken)
+        public IEnumerable<string?> TailFrom2(Stream inputStream, CancellationToken stoppingToken)
         {
             if (inputStream.Length >= TotalBytesRead)
             {

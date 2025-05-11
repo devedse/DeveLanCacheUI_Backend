@@ -28,7 +28,7 @@ namespace DeveLanCacheUI_Backend.Tests.LogReading
 
             // Assert
             Assert.AreEqual(10 * 200 + 10, sut.TotalBytesRead); // 10 newlines added between 10 lines
-            data.ForEach(d => Assert.AreEqual(200, d.Length));
+            data.ForEach(d => Assert.AreEqual(200, d!.Length));
         }
 
         [TestMethod]
@@ -45,7 +45,7 @@ namespace DeveLanCacheUI_Backend.Tests.LogReading
 
             // Assert
             Assert.AreEqual(1024, sut.TotalBytesRead);
-            Assert.AreEqual(1023, data[0].Length);
+            Assert.AreEqual(1023, data[0]!.Length);
         }
 
         [TestMethod]
@@ -64,8 +64,8 @@ namespace DeveLanCacheUI_Backend.Tests.LogReading
 
             // Assert
             Assert.AreEqual(1023 + 1025 + 2, sut.TotalBytesRead); // +2 for the two '\n' sequences
-            Assert.AreEqual(1023, data[0].Length);
-            Assert.AreEqual(1025, data[1].Length);
+            Assert.AreEqual(1023, data[0]!.Length);
+            Assert.AreEqual(1025, data[1]!.Length);
         }
 
         [TestMethod]
@@ -83,7 +83,7 @@ namespace DeveLanCacheUI_Backend.Tests.LogReading
 
             // Assert
             Assert.AreEqual(10 * 200 + 10 * 2, sut.TotalBytesRead);
-            data.ForEach(d => Assert.AreEqual(200, d.Length));
+            data.ForEach(d => Assert.AreEqual(200, d!.Length));
         }
 
         [TestMethod]
@@ -100,7 +100,7 @@ namespace DeveLanCacheUI_Backend.Tests.LogReading
 
             // Assert
             Assert.AreEqual(1024, sut.TotalBytesRead);
-            Assert.AreEqual(1022, data[0].Length);
+            Assert.AreEqual(1022, data[0]!.Length);
         }
 
         [TestMethod]
@@ -117,7 +117,7 @@ namespace DeveLanCacheUI_Backend.Tests.LogReading
 
             // Assert
             Assert.AreEqual(1025, sut.TotalBytesRead);
-            Assert.AreEqual(1023, data[0].Length);
+            Assert.AreEqual(1023, data[0]!.Length);
         }
 
         [TestMethod]
@@ -134,7 +134,7 @@ namespace DeveLanCacheUI_Backend.Tests.LogReading
 
             // Assert
             Assert.AreEqual(1026, sut.TotalBytesRead);
-            Assert.AreEqual(1024, data[0].Length);
+            Assert.AreEqual(1024, data[0]!.Length);
         }
 
         [TestMethod]
@@ -153,8 +153,8 @@ namespace DeveLanCacheUI_Backend.Tests.LogReading
 
             // Assert
             Assert.AreEqual(1023 + 1025 + 4, sut.TotalBytesRead);
-            Assert.AreEqual(1023, data[0].Length);
-            Assert.AreEqual(1025, data[1].Length);
+            Assert.AreEqual(1023, data[0]!.Length);
+            Assert.AreEqual(1025, data[1]!.Length);
         }
 
         [TestMethod]
