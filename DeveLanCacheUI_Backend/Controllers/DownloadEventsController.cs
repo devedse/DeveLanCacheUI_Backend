@@ -38,7 +38,7 @@ namespace DeveLanCacheUI_Backend.Controllers
             var excludedIps = _config.ExcludedClientIpsArray ?? Array.Empty<string>();
 
             IQueryable<DbDownloadEvent> tmpResult = _dbContext.DownloadEvents;
-            
+
             tmpResult = tmpResult.Where(t => !excludedIps.Contains(t.ClientIp));
 
             if (filter != null)
@@ -52,6 +52,8 @@ namespace DeveLanCacheUI_Backend.Controllers
             var query = from downloadEvent in pagedSubQuery
                         join steamDepot in _dbContext.SteamDepots on downloadEvent.DownloadIdentifier equals steamDepot.SteamDepotId into steamDepotJoin
                         from steamDepot in steamDepotJoin.DefaultIfEmpty()
+                        join epicManifest in _dbContext.EpicManifests on downloadEvent.DownloadIdentifierString equals epicManifest.DownloadIdentifier into epicManifestJoin
+                        from epicManifest in epicManifestJoin.DefaultIfEmpty()
                         let steamManifest = (from sm in _dbContext.SteamManifests
                                              where sm.DepotId == downloadEvent.DownloadIdentifier
                                              orderby sm.CreationTime descending
@@ -61,6 +63,7 @@ namespace DeveLanCacheUI_Backend.Controllers
                         {
                             downloadEvent,
                             steamDepot,
+                            epicManifest,
                             steamManifest
                         };
 
@@ -72,8 +75,28 @@ namespace DeveLanCacheUI_Backend.Controllers
 
             var mappedResult = groupedResult.Select(group =>
             {
-                var firstItemInGroup = group.First();
+                var firstItemInGroup = group
+                  .FirstOrDefault(item => item.steamDepot != null)
+                  ?? group.FirstOrDefault(item => item.epicManifest != null)
+                  ?? group.FirstOrDefault();
 
+                var downloadInfo = new DownloadInfo();
+
+                if (group.Key.CacheIdentifier == "steam")
+                {
+                    downloadInfo.Name = _steamAppObtainerService.GetSteamAppById(firstItemInGroup?.steamDepot?.SteamAppId)?.name;
+                    downloadInfo.AppUrl = $"https://steamdb.info/app/{firstItemInGroup?.steamDepot?.SteamAppId}/";
+                    downloadInfo.AppImageUrl = $"https://cdn.cloudflare.steamstatic.com/steam/apps/{firstItemInGroup?.steamDepot?.SteamAppId}/header.jpg";
+                    downloadInfo.DownloadIdentifier = group.Key.DownloadIdentifierString;
+                    downloadInfo.DownloadIdentifierUrl = $"https://steamdb.info/depot/{group.Key.DownloadIdentifierString}";
+                    //downloadInfo.DownloadIdentifierImageUrl = $"https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/{group.Key.DownloadIdentifierString}/header.jpg";
+                    downloadInfo.TotalBytes = firstItemInGroup?.steamManifest?.TotalCompressedSize ?? 0 + firstItemInGroup?.steamManifest?.ManifestBytesSize ?? 0;
+                }
+                else if (group.Key.CacheIdentifier == "epicgames")
+                {
+                    downloadInfo.Name = firstItemInGroup?.epicManifest?.Name;
+                    downloadInfo.TotalBytes = firstItemInGroup?.epicManifest?.TotalCompressedSize ?? 0 + firstItemInGroup?.epicManifest?.ManifestBytesSize ?? 0;
+                }
 
                 var downloadEvent = new DownloadEvent
                 {
@@ -86,20 +109,16 @@ namespace DeveLanCacheUI_Backend.Controllers
                     LastUpdatedAt = group.Key.LastUpdatedAt,
                     CacheHitBytes = group.Key.CacheHitBytes,
                     CacheMissBytes = group.Key.CacheMissBytes,
-                    TotalBytes = (firstItemInGroup.steamManifest?.TotalCompressedSize ?? 0) + (firstItemInGroup.steamManifest?.ManifestBytesSize ?? 0),
-                    SteamDepot = group.Key.CacheIdentifier != "steam" || firstItemInGroup.steamDepot == null
-                        ? null
-                        : new SteamDepot
-                        {
-                            Id = firstItemInGroup.steamDepot.SteamDepotId,
-                            SteamAppId = firstItemInGroup.steamDepot.SteamAppId
-                        }
+                    //TotalBytes = (firstItemInGroup.steamManifest?.TotalCompressedSize ?? 0) + (firstItemInGroup.steamManifest?.ManifestBytesSize ?? 0),
+                    //SteamDepot = group.Key.CacheIdentifier != "steam" || firstItemInGroup.steamDepot == null
+                    //    ? null
+                    //    : new SteamDepot
+                    //    {
+                    //        Id = firstItemInGroup.steamDepot.SteamDepotId,
+                    //        SteamAppId = firstItemInGroup.steamDepot.SteamAppId
+                    //    }
+                    DownloadInfo = downloadInfo
                 };
-
-                if (downloadEvent.CacheIdentifier == "steam" && downloadEvent.SteamDepot != null)
-                {
-                    downloadEvent.SteamDepot.SteamApp = _steamAppObtainerService.GetSteamAppById(downloadEvent.SteamDepot.SteamAppId);
-                }
 
                 return downloadEvent;
             }).ToList();

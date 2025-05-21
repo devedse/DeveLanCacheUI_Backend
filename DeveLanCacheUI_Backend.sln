@@ -7,6 +7,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DeveLanCacheUI_Backend", "D
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeveLanCacheUI_Backend.Tests", "DeveLanCacheUI_Backend.Tests\DeveLanCacheUI_Backend.Tests.csproj", "{61B234FC-1790-4951-B763-9D93CA535DF8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeveLanCacheUI_Backend.EpicManifestParser", "DeveLanCacheUI_Backend.EpicManifestParser\DeveLanCacheUI_Backend.EpicManifestParser.csproj", "{8CBBAE99-5E56-41BA-BB81-66FD5E459631}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeveLanCacheUI_Backend.EpicManifestParser.Tests", "DeveLanCacheUI_Backend.EpicManifestParser.Tests\DeveLanCacheUI_Backend.EpicManifestParser.Tests.csproj", "{78517F5E-180D-41D8-B9EE-84B8F3811F92}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +25,14 @@ Global
 		{61B234FC-1790-4951-B763-9D93CA535DF8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{61B234FC-1790-4951-B763-9D93CA535DF8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{61B234FC-1790-4951-B763-9D93CA535DF8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8CBBAE99-5E56-41BA-BB81-66FD5E459631}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8CBBAE99-5E56-41BA-BB81-66FD5E459631}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8CBBAE99-5E56-41BA-BB81-66FD5E459631}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8CBBAE99-5E56-41BA-BB81-66FD5E459631}.Release|Any CPU.Build.0 = Release|Any CPU
+		{78517F5E-180D-41D8-B9EE-84B8F3811F92}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{78517F5E-180D-41D8-B9EE-84B8F3811F92}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{78517F5E-180D-41D8-B9EE-84B8F3811F92}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{78517F5E-180D-41D8-B9EE-84B8F3811F92}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

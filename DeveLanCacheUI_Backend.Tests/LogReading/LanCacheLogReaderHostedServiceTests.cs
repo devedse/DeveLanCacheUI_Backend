@@ -20,7 +20,7 @@ namespace DeveLanCacheUI_Backend.Tests.LogReading
             var line = new string('a', 200); // a line with 200 characters
             var content = string.Join("\n", Enumerable.Repeat(line, 11)); // 11 such lines
             var stream = MockStream(content);
-            var sut = new LanCacheLogReaderHostedService(null!, null!, null!, null!);
+            var sut = new LanCacheLogReaderHostedService(null!, null!, null!);
             var cts = new CancellationTokenSource();
 
             // Act
@@ -28,7 +28,7 @@ namespace DeveLanCacheUI_Backend.Tests.LogReading
 
             // Assert
             Assert.AreEqual(10 * 200 + 10, sut.TotalBytesRead); // 10 newlines added between 10 lines
-            data.ForEach(d => Assert.AreEqual(200, d.Length));
+            data.ForEach(d => Assert.AreEqual(200, d!.Length));
         }
 
         [TestMethod]
@@ -37,7 +37,7 @@ namespace DeveLanCacheUI_Backend.Tests.LogReading
             // Arrange
             var line = new string('b', 1023);
             var stream = MockStream(line + "\n");
-            var sut = new LanCacheLogReaderHostedService(null!, null!, null!, null!);
+            var sut = new LanCacheLogReaderHostedService(null!, null!, null!);
             var cts = new CancellationTokenSource();
 
             // Act
@@ -45,7 +45,7 @@ namespace DeveLanCacheUI_Backend.Tests.LogReading
 
             // Assert
             Assert.AreEqual(1024, sut.TotalBytesRead);
-            Assert.AreEqual(1023, data[0].Length);
+            Assert.AreEqual(1023, data[0]!.Length);
         }
 
         [TestMethod]
@@ -56,7 +56,7 @@ namespace DeveLanCacheUI_Backend.Tests.LogReading
             var line2 = new string('d', 1025);
             var content = $"{line1}\n{line2}\n";
             var stream = MockStream(content);
-            var sut = new LanCacheLogReaderHostedService(null!, null!, null!, null!);
+            var sut = new LanCacheLogReaderHostedService(null!, null!, null!);
             var cts = new CancellationTokenSource();
 
             // Act
@@ -64,8 +64,8 @@ namespace DeveLanCacheUI_Backend.Tests.LogReading
 
             // Assert
             Assert.AreEqual(1023 + 1025 + 2, sut.TotalBytesRead); // +2 for the two '\n' sequences
-            Assert.AreEqual(1023, data[0].Length);
-            Assert.AreEqual(1025, data[1].Length);
+            Assert.AreEqual(1023, data[0]!.Length);
+            Assert.AreEqual(1025, data[1]!.Length);
         }
 
         [TestMethod]
@@ -75,7 +75,7 @@ namespace DeveLanCacheUI_Backend.Tests.LogReading
             var line = new string('a', 200);
             var content = string.Join("\r\n", Enumerable.Repeat(line, 11));
             var stream = MockStream(content);
-            var sut = new LanCacheLogReaderHostedService(null!, null!, null!, null!);
+            var sut = new LanCacheLogReaderHostedService(null!, null!, null!);
             var cts = new CancellationTokenSource();
 
             // Act
@@ -83,7 +83,7 @@ namespace DeveLanCacheUI_Backend.Tests.LogReading
 
             // Assert
             Assert.AreEqual(10 * 200 + 10 * 2, sut.TotalBytesRead);
-            data.ForEach(d => Assert.AreEqual(200, d.Length));
+            data.ForEach(d => Assert.AreEqual(200, d!.Length));
         }
 
         [TestMethod]
@@ -92,7 +92,7 @@ namespace DeveLanCacheUI_Backend.Tests.LogReading
             // Arrange
             var line = new string('b', 1022);
             var stream = MockStream(line + "\r\n");
-            var sut = new LanCacheLogReaderHostedService(null!, null!, null!, null!);
+            var sut = new LanCacheLogReaderHostedService(null!, null!, null!);
             var cts = new CancellationTokenSource();
 
             // Act
@@ -100,7 +100,7 @@ namespace DeveLanCacheUI_Backend.Tests.LogReading
 
             // Assert
             Assert.AreEqual(1024, sut.TotalBytesRead);
-            Assert.AreEqual(1022, data[0].Length);
+            Assert.AreEqual(1022, data[0]!.Length);
         }
 
         [TestMethod]
@@ -109,7 +109,7 @@ namespace DeveLanCacheUI_Backend.Tests.LogReading
             // Arrange
             var line = new string('b', 1023);
             var stream = MockStream(line + "\r\n");
-            var sut = new LanCacheLogReaderHostedService(null!, null!, null!, null!);
+            var sut = new LanCacheLogReaderHostedService(null!, null!, null!);
             var cts = new CancellationTokenSource();
 
             // Act
@@ -117,7 +117,7 @@ namespace DeveLanCacheUI_Backend.Tests.LogReading
 
             // Assert
             Assert.AreEqual(1025, sut.TotalBytesRead);
-            Assert.AreEqual(1023, data[0].Length);
+            Assert.AreEqual(1023, data[0]!.Length);
         }
 
         [TestMethod]
@@ -126,7 +126,7 @@ namespace DeveLanCacheUI_Backend.Tests.LogReading
             // Arrange
             var line = new string('b', 1024);
             var stream = MockStream(line + "\r\n");
-            var sut = new LanCacheLogReaderHostedService(null!, null!, null!, null!);
+            var sut = new LanCacheLogReaderHostedService(null!, null!, null!);
             var cts = new CancellationTokenSource();
 
             // Act
@@ -134,7 +134,7 @@ namespace DeveLanCacheUI_Backend.Tests.LogReading
 
             // Assert
             Assert.AreEqual(1026, sut.TotalBytesRead);
-            Assert.AreEqual(1024, data[0].Length);
+            Assert.AreEqual(1024, data[0]!.Length);
         }
 
         [TestMethod]
@@ -145,7 +145,7 @@ namespace DeveLanCacheUI_Backend.Tests.LogReading
             var line2 = new string('d', 1025);
             var content = $"{line1}\r\n{line2}\r\n";
             var stream = MockStream(content);
-            var sut = new LanCacheLogReaderHostedService(null!, null!, null!, null!);
+            var sut = new LanCacheLogReaderHostedService(null!, null!, null!);
             var cts = new CancellationTokenSource();
 
             // Act
@@ -153,8 +153,8 @@ namespace DeveLanCacheUI_Backend.Tests.LogReading
 
             // Assert
             Assert.AreEqual(1023 + 1025 + 4, sut.TotalBytesRead);
-            Assert.AreEqual(1023, data[0].Length);
-            Assert.AreEqual(1025, data[1].Length);
+            Assert.AreEqual(1023, data[0]!.Length);
+            Assert.AreEqual(1025, data[1]!.Length);
         }
 
         [TestMethod]
@@ -164,7 +164,7 @@ namespace DeveLanCacheUI_Backend.Tests.LogReading
             var initialTotalBytesRead = 4;
             var content = "abc\ndef\nghi\n";
             var stream = MockStream(content);
-            var sut = new LanCacheLogReaderHostedService(null!, null!, null!, null!)
+            var sut = new LanCacheLogReaderHostedService(null!, null!, null!)
             {
                 TotalBytesRead = initialTotalBytesRead
             };
@@ -186,7 +186,7 @@ namespace DeveLanCacheUI_Backend.Tests.LogReading
             // Arrange
             var content = "line1\nline2\nline3\n";
             var stream = MockStream(content);
-            var sut = new LanCacheLogReaderHostedService(null!, null!, null!, null!)
+            var sut = new LanCacheLogReaderHostedService(null!, null!, null!)
             {
                 TotalBytesRead = 500
             };
@@ -210,7 +210,7 @@ namespace DeveLanCacheUI_Backend.Tests.LogReading
             var stringOfLength1024 = new string('a', 1023);
             var content = $"{stringOfLength1024}\n\nline2\nline3\n";
             var stream = MockStream(content);
-            var sut = new LanCacheLogReaderHostedService(null!, null!, null!, null!)
+            var sut = new LanCacheLogReaderHostedService(null!, null!, null!)
             {
                 TotalBytesRead = 0
             };
@@ -235,7 +235,7 @@ namespace DeveLanCacheUI_Backend.Tests.LogReading
             var stringOfLength1024 = new string('a', 1023);
             var content = $"{stringOfLength1024}\n\r\nline2\nline3\n";
             var stream = MockStream(content);
-            var sut = new LanCacheLogReaderHostedService(null!, null!, null!, null!)
+            var sut = new LanCacheLogReaderHostedService(null!, null!, null!)
             {
                 TotalBytesRead = 0
             };
