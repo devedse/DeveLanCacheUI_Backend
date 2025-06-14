@@ -1,4 +1,6 @@
-﻿namespace DeveLanCacheUI_Backend.Db
+﻿using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+
+namespace DeveLanCacheUI_Backend.Db
 {
     public class DeveLanCacheUIDbContext : DbContext
     {
@@ -11,7 +13,7 @@
         {
 
         }
-        
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -25,5 +27,23 @@
             modelBuilder.Entity<DbSteamDepot>()
                         .HasKey(pc => new { pc.SteamDepotId, pc.SteamAppId });
         }
+
+        protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+        {
+            ArgumentNullException.ThrowIfNull(configurationBuilder);
+
+            configurationBuilder.Properties<DateTime>().HaveConversion<DateTimeAsUtcValueConverter>();
+            configurationBuilder.Properties<DateTime?>().HaveConversion<NullableDateTimeAsUtcValueConverter>();
+        }
     }
+
+    public class NullableDateTimeAsUtcValueConverter() : ValueConverter<DateTime?, DateTime?>(
+    v => !v.HasValue ? v : ToUtc(v.Value), v => v.HasValue ? DateTime.SpecifyKind(v.Value, DateTimeKind.Utc) : v)
+    {
+        private static DateTime? ToUtc(DateTime v) => v.Kind == DateTimeKind.Utc ? v : v.ToUniversalTime();
+    }
+
+    public class DateTimeAsUtcValueConverter() : ValueConverter<DateTime, DateTime>(
+        v => v.Kind == DateTimeKind.Utc ? v : v.ToUniversalTime(), v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
+
 }
