@@ -18,9 +18,9 @@
         public long CacheHitBytes { get; set; }
         public long CacheMissBytes { get; set; }
 
-        public ulong TotalBytes { get; set; }
+        //public ulong TotalBytes { get; set; }
 
 
-        public SteamDepot? SteamDepot { get; set; }
+        public DownloadInfo? DownloadInfo { get; set; }
     }
 }

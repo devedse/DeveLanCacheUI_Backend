@@ -40,4 +40,8 @@
     <Folder Include="Migrations\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\DeveLanCacheUI_Backend.EpicManifestParser\DeveLanCacheUI_Backend.EpicManifestParser.csproj" />
+  </ItemGroup>
+
 </Project>

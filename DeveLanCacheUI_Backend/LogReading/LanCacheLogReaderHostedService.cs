@@ -9,7 +9,6 @@ namespace DeveLanCacheUI_Backend.LogReading
 
         private readonly IServiceProvider _services;
         private readonly DeveLanCacheConfiguration _deveLanCacheConfiguration;
-        private readonly SteamManifestService _steamManifestService;
         private readonly ILogger<LanCacheLogReaderHostedService> _logger;
 
         /// <summary>
@@ -43,12 +42,10 @@ namespace DeveLanCacheUI_Backend.LogReading
 
         public LanCacheLogReaderHostedService(IServiceProvider services,
             DeveLanCacheConfiguration deveLanCacheConfiguration,
-            SteamManifestService steamManifestService,
             ILogger<LanCacheLogReaderHostedService> logger)
         {
             _services = services;
             _deveLanCacheConfiguration = deveLanCacheConfiguration;
-            _steamManifestService = steamManifestService;
             _logger = logger;
         }
 
@@ -121,15 +118,27 @@ namespace DeveLanCacheUI_Backend.LogReading
 
                             foreach (var lanCacheLogLine in filteredLogLines)
                             {
-                                if (lanCacheLogLine.CacheIdentifier == "steam" && ExcludedAppIds.Contains(lanCacheLogLine.DownloadIdentifier))
+                                if (lanCacheLogLine.CacheIdentifier == "steam" && lanCacheLogLine.DownloadIdentifier != null && ExcludedAppIds.Contains(lanCacheLogLine.DownloadIdentifier))
                                 {
                                     continue;
                                 }
-                                if (lanCacheLogLine.CacheIdentifier == "steam" && lanCacheLogLine.Request.Contains("/manifest/") && DateTime.Now < lanCacheLogLine.DateTime.AddDays(14))
+
+                                if (
+                                    (lanCacheLogLine.CacheIdentifier == "steam" && lanCacheLogLine.Request.Contains("/manifest/")) ||
+                                    (lanCacheLogLine.CacheIdentifier == "epicgames" && lanCacheLogLine.Request.Contains(".manifest?"))
+                                    )
                                 {
-                                    _logger.LogInformation("Found manifest for Depot: {DownloadIdentifier}", lanCacheLogLine.DownloadIdentifier);
-                                    var ttt = lanCacheLogLine;
-                                    _steamManifestService.TryToDownloadManifest(ttt);
+                                    if (DateTime.Now < lanCacheLogLine.DateTime.AddDays(14))
+                                    {
+                                        // We found a manifest. This contains more information about the download. We'll process these asynchronously
+                                        // since it requires downloading and parsing the manifest file.
+                                        _logger.LogInformation("Found manifest for download: {DownloadIdentifier}", lanCacheLogLine.DownloadIdentifier);
+                                        var itemToProcessAsynchronously = new DbAsyncLogEntryProcessingQueueItem()
+                                        {
+                                            LanCacheLogEntryRaw = lanCacheLogLine
+                                        };
+                                        dbContext.AsyncLogEntryProcessingQueueItems.Add(itemToProcessAsynchronously);
+                                    }
                                 }
 
                                 var cacheKey = $"{lanCacheLogLine.CacheIdentifier}_||_{lanCacheLogLine.DownloadIdentifier}_||_{lanCacheLogLine.RemoteAddress}";
@@ -248,39 +257,39 @@ namespace DeveLanCacheUI_Backend.LogReading
             }
         }
 
-        static IEnumerable<string> TailFrom(string file, CancellationToken stoppingToken)
-        {
-            using (var reader = File.OpenText(file))
-            {
-                // go to end - if the next line is commented out, all the lines from the beginning is returned
-                // reader.BaseStream.Seek(0, SeekOrigin.End);
-                while (true)
-                {
-                    stoppingToken.ThrowIfCancellationRequested();
+        //static IEnumerable<string> TailFrom(string file, CancellationToken stoppingToken)
+        //{
+        //    using (var reader = File.OpenText(file))
+        //    {
+        //        // go to end - if the next line is commented out, all the lines from the beginning is returned
+        //        // reader.BaseStream.Seek(0, SeekOrigin.End);
+        //        while (true)
+        //        {
+        //            stoppingToken.ThrowIfCancellationRequested();
 
-                    string? line = reader.ReadLine();
-                    if (reader.BaseStream.Length < reader.BaseStream.Position)
-                    {
-                        Console.WriteLine($"Uhh: {reader.BaseStream.Length} < {reader.BaseStream.Position}");
-                        //reader.BaseStream.Seek(0, SeekOrigin.Begin);
+        //            string? line = reader.ReadLine();
+        //            if (reader.BaseStream.Length < reader.BaseStream.Position)
+        //            {
+        //                Console.WriteLine($"Uhh: {reader.BaseStream.Length} < {reader.BaseStream.Position}");
+        //                //reader.BaseStream.Seek(0, SeekOrigin.Begin);
 
-                    }
+        //            }
 
-                    if (line != null)
-                    {
-                        yield return line;
-                    }
-                    else
-                    {
-                        yield return null;
-                    }
-                }
-            }
-        }
+        //            if (line != null)
+        //            {
+        //                yield return line;
+        //            }
+        //            else
+        //            {
+        //                yield return null;
+        //            }
+        //        }
+        //    }
+        //}
 
         public long TotalBytesRead { get; set; }
 
-        public IEnumerable<string> TailFrom2(Stream inputStream, CancellationToken stoppingToken)
+        public IEnumerable<string?> TailFrom2(Stream inputStream, CancellationToken stoppingToken)
         {
             if (inputStream.Length >= TotalBytesRead)
             {
