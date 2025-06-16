@@ -132,7 +132,11 @@
                     var item = dbContext.Settings.FirstOrDefault(t => t.Key == DbSetting.SettingKey_SteamChangeNumber);
                     if (item == null)
                     {
-                        item = new DbSetting { Key = DbSetting.SettingKey_SteamChangeNumber, Value = _currentChangeNumber.ToString() };
+                        item = new DbSetting
+                        {
+                            Key = DbSetting.SettingKey_SteamChangeNumber,
+                            Value = _currentChangeNumber.ToString()
+                        };
                         dbContext.Settings.Add(item);
                     }
                     else
