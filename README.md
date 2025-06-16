@@ -257,3 +257,4 @@ https://linux.die.net/man/8/mount.cifs
 | SonarQube |
 |:---------:|
 | [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=DeveLanCacheUI_Backend&metric=alert_status)](https://sonarcloud.io/dashboard?id=DeveLanCacheUI_Backend) |
+

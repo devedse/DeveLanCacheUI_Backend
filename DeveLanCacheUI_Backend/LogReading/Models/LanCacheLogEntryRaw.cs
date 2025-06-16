@@ -42,6 +42,7 @@
 
         public void CalculateFields()
         {
+            // Will automatically get converted to UTC when storing in Database
             DateTime = DateTime.ParseExact(TimeLocal, "dd/MMM/yyyy:HH:mm:ss zzz", CultureInfo.InvariantCulture);
             BodyBytesSentLong = long.Parse(BodyBytesSent);
 

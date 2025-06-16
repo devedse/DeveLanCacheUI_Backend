@@ -7,6 +7,7 @@ namespace DeveLanCacheUI_Backend.Services.OriginalDepotEnricher
         public IServiceProvider Services { get; }
 
         private readonly DeveLanCacheConfiguration _deveLanCacheConfiguration;
+        private readonly SteamDepotEnricherHostedService _steamDepotEnricherHostedService;
         private readonly ILogger<SteamDepotDownloaderHostedService> _logger;
         private readonly HttpClient _httpClient;
 
@@ -14,10 +15,12 @@ namespace DeveLanCacheUI_Backend.Services.OriginalDepotEnricher
 
         public SteamDepotDownloaderHostedService(IServiceProvider services,
             DeveLanCacheConfiguration deveLanCacheConfiguration,
+            SteamDepotEnricherHostedService steamDepotEnricherHostedService,
             ILogger<SteamDepotDownloaderHostedService> logger)
         {
             Services = services;
             _deveLanCacheConfiguration = deveLanCacheConfiguration;
+            _steamDepotEnricherHostedService = steamDepotEnricherHostedService;
             _logger = logger;
             _httpClient = new HttpClient();
             _httpClient.DefaultRequestHeaders.Add("User-Agent", "request");
@@ -40,31 +43,34 @@ namespace DeveLanCacheUI_Backend.Services.OriginalDepotEnricher
 
             var depotFileDirectory = Path.Combine(deveLanCacheUIDataDirectory, "depotdir");
 
-            if (!Directory.Exists(depotFileDirectory))
+            if (Directory.Exists(depotFileDirectory))
             {
-                Directory.CreateDirectory(depotFileDirectory);
+                // This is purely cleanup since we don't use the depot directory anymore. We just directly download and process.
+                Directory.Delete(depotFileDirectory, true);
             }
 
             while (!stoppingToken.IsCancellationRequested)
             {
                 var shouldDownload = await NewDepotFileAvailable();
 
+                _logger.LogInformation("New Depot File Available: {NewVersionAvailable}, LatestVersion: {LatestVersion}, DownloadUrl: {DownloadUrl}",
+                    shouldDownload.NewVersionAvailable, shouldDownload.LatestVersion, shouldDownload.DownloadUrl);
+
                 if (shouldDownload.NewVersionAvailable)
                 {
-                    var createdFileName = await GoDownload(depotFileDirectory, shouldDownload);
-
-                    //Remove all other csv files in DepotDir except this one
-                    var depotFiles = Directory.GetFiles(depotFileDirectory).Where(t => Path.GetExtension(t).Equals(".csv", StringComparison.OrdinalIgnoreCase) && !t.EndsWith(createdFileName, StringComparison.OrdinalIgnoreCase));
-                    foreach (var depotFile in depotFiles)
+                    if (shouldDownload.LatestVersion == null || string.IsNullOrWhiteSpace(shouldDownload.DownloadUrl))
                     {
-                        try
-                        {
-                            File.Delete(depotFile);
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogWarning("Could not delete depot file: {DepotFile}, exception: {Exception}", depotFile, ex);
-                        }
+                        throw new UnreachableException($"New version available, but LatestVersion or DownloadUrl is null. This should not happen. LatestVersion: {shouldDownload.LatestVersion}, DownloadUrl: {shouldDownload.DownloadUrl}");
+                    }
+                    var downloadedBytes = await GoDownload(depotFileDirectory, shouldDownload);
+
+                    if (downloadedBytes != null)
+                    {
+                        await _steamDepotEnricherHostedService.GoProcess(shouldDownload.LatestVersion, downloadedBytes, stoppingToken);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Downloaded depot file was null, not processing further.");
                     }
                 }
 
@@ -72,7 +78,7 @@ namespace DeveLanCacheUI_Backend.Services.OriginalDepotEnricher
             }
         }
 
-        private async Task<string?> GoDownload(string depotFileDirectory, (bool NewVersionAvailable, Version? LatestVersion, string? DownloadUrl) shouldDownload)
+        private async Task<byte[]?> GoDownload(string depotFileDirectory, (bool NewVersionAvailable, Version? LatestVersion, string? DownloadUrl) shouldDownload)
         {
             _logger.LogInformation("Detected that new version '{NewVersionAvailable}' of Depot File is available, so downloading: {DownloadUrl}...", shouldDownload.NewVersionAvailable, shouldDownload.DownloadUrl);
 
@@ -84,31 +90,7 @@ namespace DeveLanCacheUI_Backend.Services.OriginalDepotEnricher
             }
 
             var bytes = await downloadedCsv.Content.ReadAsByteArrayAsync();
-
-            var fileName = $"depot_{shouldDownload.LatestVersion}.csv";
-            var filePath = Path.Combine(depotFileDirectory, fileName);
-            File.WriteAllBytes(filePath, bytes);
-
-            await using (var scope = Services.CreateAsyncScope())
-            {
-                using var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();
-                var foundSetting = await dbContext.Settings.FirstOrDefaultAsync();
-                if (foundSetting == null || foundSetting.Value == null)
-                {
-                    foundSetting = new DbSetting()
-                    {
-                        Key = DbSetting.SettingKey_DepotVersion,
-                        Value = shouldDownload.LatestVersion?.ToString()
-                    };
-                    dbContext.Settings.Add(foundSetting);
-                }
-                else
-                {
-                    foundSetting.Value = shouldDownload.LatestVersion?.ToString();
-                }
-                await dbContext.SaveChangesAsync();
-            }
-            return fileName;
+            return bytes;
         }
 
         private async Task<(bool NewVersionAvailable, Version? LatestVersion, string? DownloadUrl)> NewDepotFileAvailable()
@@ -148,7 +130,7 @@ namespace DeveLanCacheUI_Backend.Services.OriginalDepotEnricher
             await using (var scope = Services.CreateAsyncScope())
             {
                 using var dbContext = scope.ServiceProvider.GetRequiredService<DeveLanCacheUIDbContext>();
-                var foundSetting = await dbContext.Settings.FirstOrDefaultAsync();
+                var foundSetting = await dbContext.Settings.FirstOrDefaultAsync(t => t.Key == DbSetting.SettingKey_DepotVersion);
                 if (foundSetting == null || foundSetting.Value == null)
                 {
                     _logger.LogInformation("Update of Depot File required because CurrentVersion could not be found");

@@ -87,8 +87,8 @@ namespace DeveLanCacheUI_Backend
             }
             else
             {
-                builder.Services.AddHostedService<SteamDepotEnricherHostedService>();
                 builder.Services.AddHostedService<SteamDepotDownloaderHostedService>();
+                builder.Services.AddSingleton<SteamDepotEnricherHostedService>();
                 builder.Services.AddSingleton<ISteamAppObtainerService, OriginalSteamAppObtainerService>();
             }
 

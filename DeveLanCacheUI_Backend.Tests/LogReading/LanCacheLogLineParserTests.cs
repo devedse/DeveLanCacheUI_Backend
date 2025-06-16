@@ -90,5 +90,29 @@ namespace DeveLanCacheUI_Backend.Tests.LogReading
             Assert.AreEqual("ctldl.windowsupdate.com", splitted[13]);
             Assert.AreEqual("-", splitted[14]);
         }
+
+        [TestMethod]
+        public void SplittedToLanCacheLogEntryRaw_ParseCorrectly_AndAlsoCalculateFieldsWorks_ForDateTimeWithTimeZone()
+        {
+            var logEntry = LanCacheLogLineParser.LogLineToLanCacheLogEntryRaw("[steam] 10.88.10.1 / - - - [28/Jun/2023:20:14:49 +0800] \"GET /depot/434174/chunk/9437c354e87778aeafe94a65ee042432440d4037 HTTP/1.1\" 200 392304 \"-\" \"Valve/Steam HTTP Client 1.0\" \"HIT\" \"cache1-ams1.steamcontent.com\" \"-\"");
+
+            Assert.AreEqual("steam", logEntry.CacheIdentifier);
+            Assert.AreEqual("10.88.10.1", logEntry.RemoteAddress);
+            Assert.AreEqual("-", logEntry.ForwardedFor);
+            Assert.AreEqual("-", logEntry.RemoteUser);
+            Assert.AreEqual("28/Jun/2023:20:14:49 +0800", logEntry.TimeLocal);
+            Assert.AreEqual("GET /depot/434174/chunk/9437c354e87778aeafe94a65ee042432440d4037 HTTP/1.1", logEntry.Request);
+            Assert.AreEqual("200", logEntry.Status);
+            Assert.AreEqual("392304", logEntry.BodyBytesSent);
+            Assert.AreEqual("-", logEntry.Referer);
+            Assert.AreEqual("Valve/Steam HTTP Client 1.0", logEntry.UserAgent);
+            Assert.AreEqual("HIT", logEntry.UpstreamCacheStatus);
+            Assert.AreEqual("cache1-ams1.steamcontent.com", logEntry.Host);
+            Assert.AreEqual("-", logEntry.HttpRange);
+
+            logEntry.CalculateFields();
+
+            Assert.AreEqual(new DateTime(2023, 6, 28, 12, 14, 49, DateTimeKind.Utc), logEntry.DateTime.ToUniversalTime());
+        }
     }
 }
