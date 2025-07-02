@@ -9,5 +9,6 @@
         public const string SettingKey_DepotVersion = nameof(SettingKey_DepotVersion);
         public const string SettingKey_SteamChangeNumber = nameof(SettingKey_SteamChangeNumber);
         public const string SettingKey_TotalBytesRead = nameof(SettingKey_TotalBytesRead);
+        public const string SettingKey_ProcessedLogFiles = nameof(SettingKey_ProcessedLogFiles);
     }
 }

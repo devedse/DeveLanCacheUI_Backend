@@ -1,4 +1,6 @@
 ﻿using DbContext = DeveLanCacheUI_Backend.Db.DeveLanCacheUIDbContext;
+using System.IO.Compression;
+using ZstdNet;
 
 namespace DeveLanCacheUI_Backend.LogReading
 {
@@ -82,7 +84,17 @@ namespace DeveLanCacheUI_Backend.LogReading
             {
                 throw new NullReferenceException("LanCacheLogsDirectory == null, please ensure the LanCacheLogsDirectory ENVIRONMENT_VARIABLE is filled in");
             }
+
+            // Process historical log files first
+            await ProcessHistoricalLogFiles(logFilePath, oldestLog, stoppingToken);
+
+            // Now tail the current access.log file
             var accessLogFilePath = Path.Combine(logFilePath, "access.log");
+            if (!File.Exists(accessLogFilePath))
+            {
+                _logger.LogWarning("Current access.log file not found: {FilePath}", accessLogFilePath);
+                return;
+            }
 
             using (var fileStream = new FileStream(accessLogFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
@@ -98,103 +110,61 @@ namespace DeveLanCacheUI_Backend.LogReading
                         currentSet.Count, currentSet.FirstOrDefault()?.DateTime, totalLinesProcessed);
                     totalLinesProcessed += currentSet.Count;
 
+                    await ProcessLogBatch(currentSet, stoppingToken);
+
+                    // Save total bytes read
                     await using (var scope = _services.CreateAsyncScope())
                     {
-                        var retryPolicy = Policy
-                            .Handle<DbUpdateException>()
-                            .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
-                            (exception, timeSpan, context) =>
-                            {
-                                _logger.LogError("An error occurred while trying to save changes: {Message}", exception.Message);
-                            });
-
-                        await retryPolicy.ExecuteAsync(async () =>
+                        using var dbContext = scope.ServiceProvider.GetRequiredService<DbContext>();
+                        var totalByteReadSetting = await dbContext.Settings.FirstOrDefaultAsync(t => t.Key == DbSetting.SettingKey_TotalBytesRead);
+                        if (totalByteReadSetting == null)
                         {
-                            using var dbContext = scope.ServiceProvider.GetRequiredService<DbContext>();
-
-                            //var filteredLogLines = currentSet.Where(t => t.CacheIdentifier == "steam");
-                            IEnumerable<LanCacheLogEntryRaw> filteredLogLines = currentSet;
-                            filteredLogLines = filteredLogLines.Where(t => t.CacheIdentifier != "127.0.0.1");
-                            filteredLogLines = filteredLogLines.Where(t => t.Referer != SkipLogLineReferrerString);
-
-                            Dictionary<string, DbDownloadEvent> steamAppDownloadEventsCache = new Dictionary<string, DbDownloadEvent>();
-
-                            foreach (var lanCacheLogLine in filteredLogLines)
+                            totalByteReadSetting = new DbSetting()
                             {
-                                if (lanCacheLogLine.CacheIdentifier == "steam" && ExcludedAppIds.Contains(lanCacheLogLine.DownloadIdentifier))
-                                {
-                                    continue;
-                                }
-                                if (lanCacheLogLine.CacheIdentifier == "steam" && lanCacheLogLine.Request.Contains("/manifest/") && DateTime.Now < lanCacheLogLine.DateTime.AddDays(14))
-                                {
-                                    _logger.LogInformation("Found manifest for Depot: {DownloadIdentifier}", lanCacheLogLine.DownloadIdentifier);
-                                    var ttt = lanCacheLogLine;
-                                    _steamManifestService.TryToDownloadManifest(ttt);
-                                }
-
-                                var cacheKey = $"{lanCacheLogLine.CacheIdentifier}_||_{lanCacheLogLine.DownloadIdentifier}_||_{lanCacheLogLine.RemoteAddress}";
-                                steamAppDownloadEventsCache.TryGetValue(cacheKey, out var cachedEvent);
-
-                                if (cachedEvent == null)
-                                {
-                                    cachedEvent = await dbContext.DownloadEvents
-                                       .FirstOrDefaultAsync(t =>
-                                           t.CacheIdentifier == lanCacheLogLine.CacheIdentifier &&
-                                           t.DownloadIdentifierString == lanCacheLogLine.DownloadIdentifier &&
-                                           t.ClientIp == lanCacheLogLine.RemoteAddress &&
-                                           t.LastUpdatedAt > lanCacheLogLine.DateTime.AddMinutes(-5)
-                                           );
-                                    if (cachedEvent != null)
-                                    {
-                                        steamAppDownloadEventsCache[cacheKey] = cachedEvent;
-                                    }
-                                }
-
-                                if (cachedEvent == null || !(cachedEvent.LastUpdatedAt > lanCacheLogLine.DateTime.AddMinutes(-5)))
-                                {
-                                    _logger.LogInformation("Adding new event because more than 5 minutes no update: {CacheKey} ({DateTime})", cacheKey, lanCacheLogLine.DateTime);
-
-                                    uint.TryParse(lanCacheLogLine.DownloadIdentifier, out var downloadIdentifierInt);
-                                    cachedEvent = new DbDownloadEvent()
-                                    {
-                                        CacheIdentifier = lanCacheLogLine.CacheIdentifier,
-                                        DownloadIdentifierString = lanCacheLogLine.DownloadIdentifier,
-                                        DownloadIdentifier = downloadIdentifierInt,
-                                        CreatedAt = lanCacheLogLine.DateTime,
-                                        LastUpdatedAt = lanCacheLogLine.DateTime,
-                                        ClientIp = lanCacheLogLine.RemoteAddress
-                                    };
-                                    steamAppDownloadEventsCache[cacheKey] = cachedEvent;
-                                    await dbContext.DownloadEvents.AddAsync(cachedEvent);
-                                }
-
-                                cachedEvent.LastUpdatedAt = lanCacheLogLine.DateTime;
-                                if (lanCacheLogLine.UpstreamCacheStatus == "HIT")
-                                {
-                                    cachedEvent.CacheHitBytes += lanCacheLogLine.BodyBytesSentLong;
-                                }
-                                else
-                                {
-                                    cachedEvent.CacheMissBytes += lanCacheLogLine.BodyBytesSentLong;
-                                }
-                            }
-
-                            //Save total bytes read
-                            var totalByteReadSetting = await dbContext.Settings.FirstOrDefaultAsync(t => t.Key == DbSetting.SettingKey_TotalBytesRead);
-                            if (totalByteReadSetting == null)
-                            {
-                                totalByteReadSetting = new DbSetting()
-                                {
-                                    Key = DbSetting.SettingKey_TotalBytesRead
-                                };
-                                await dbContext.Settings.AddAsync(totalByteReadSetting);
-                            }
-                            totalByteReadSetting.Value = TotalBytesRead.ToString();
-
-                            await dbContext.SaveChangesAsync();
-                            FrontendRefresherService.RequireFrontendRefresh();
-                        });
+                                Key = DbSetting.SettingKey_TotalBytesRead
+                            };
+                            await dbContext.Settings.AddAsync(totalByteReadSetting);
+                        }
+                        totalByteReadSetting.Value = TotalBytesRead.ToString();
+                        await dbContext.SaveChangesAsync();
                     }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Processes historical log files (rotated and compressed) before tailing the current log.
+        /// </summary>
+        private async Task ProcessHistoricalLogFiles(string logDirectory, DateTime skipOlderThan, CancellationToken stoppingToken)
+        {
+            var logFiles = GetLogFiles(logDirectory);
+            var processedFiles = await GetProcessedLogFiles();
+            
+            // Skip the current access.log file - we'll tail that separately
+            var historicalFiles = logFiles.Skip(1).ToList();
+            
+            foreach (var logFile in historicalFiles)
+            {
+                stoppingToken.ThrowIfCancellationRequested();
+                
+                var fileName = Path.GetFileName(logFile);
+                if (processedFiles.Contains(fileName))
+                {
+                    _logger.LogDebug("Skipping already processed log file: {FileName}", fileName);
+                    continue;
+                }
+                
+                try
+                {
+                    await ProcessCompleteLogFile(logFile, skipOlderThan, stoppingToken);
+                    
+                    // Mark as processed
+                    processedFiles.Add(fileName);
+                    await SaveProcessedLogFiles(processedFiles);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error processing log file {LogFile}", logFile);
                 }
             }
         }
@@ -245,6 +215,247 @@ namespace DeveLanCacheUI_Backend.LogReading
                         _logger.LogInformation("Skipped total of {SkipCounter} lines (already processed)", skipCounter);
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// Gets all available log files in order (newest to oldest).
+        /// Returns access.log first, then access.log.1, access.log.2, etc.
+        /// </summary>
+        private List<string> GetLogFiles(string logDirectory)
+        {
+            var logFiles = new List<string>();
+            var baseLogFile = Path.Combine(logDirectory, "access.log");
+            
+            // Add the current log file first
+            if (File.Exists(baseLogFile))
+            {
+                logFiles.Add(baseLogFile);
+            }
+            
+            // Look for rotated files
+            for (int i = 1; i <= 100; i++) // Reasonable limit
+            {
+                var rotatedFile = Path.Combine(logDirectory, $"access.log.{i}");
+                var rotatedGzFile = rotatedFile + ".gz";
+                var rotatedZstFile = rotatedFile + ".zst";
+                
+                if (File.Exists(rotatedFile))
+                {
+                    logFiles.Add(rotatedFile);
+                }
+                else if (File.Exists(rotatedGzFile))
+                {
+                    logFiles.Add(rotatedGzFile);
+                }
+                else if (File.Exists(rotatedZstFile))
+                {
+                    logFiles.Add(rotatedZstFile);
+                }
+                else
+                {
+                    // No more files found, break the loop
+                    break;
+                }
+            }
+            
+            return logFiles;
+        }
+
+        /// <summary>
+        /// Opens a stream for a log file, handling compression automatically.
+        /// </summary>
+        private Stream OpenLogFileStream(string filePath)
+        {
+            var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            
+            if (filePath.EndsWith(".gz"))
+            {
+                return new GZipStream(fileStream, CompressionMode.Decompress);
+            }
+            else if (filePath.EndsWith(".zst"))
+            {
+                // For zstd, we need to decompress to memory since ZstdNet doesn't support streaming decompression directly
+                using (var decompressor = new Decompressor())
+                {
+                    var compressedData = new byte[fileStream.Length];
+                    fileStream.Read(compressedData, 0, compressedData.Length);
+                    fileStream.Close();
+                    
+                    var decompressedData = decompressor.Unwrap(compressedData);
+                    return new MemoryStream(decompressedData);
+                }
+            }
+            
+            return fileStream;
+        }
+
+        /// <summary>
+        /// Gets the set of already processed log files from the database.
+        /// </summary>
+        private async Task<HashSet<string>> GetProcessedLogFiles()
+        {
+            await using (var scope = _services.CreateAsyncScope())
+            {
+                using var dbContext = scope.ServiceProvider.GetRequiredService<DbContext>();
+                var setting = await dbContext.Settings.FirstOrDefaultAsync(t => t.Key == DbSetting.SettingKey_ProcessedLogFiles);
+                
+                if (setting?.Value != null)
+                {
+                    return new HashSet<string>(setting.Value.Split(';', StringSplitOptions.RemoveEmptyEntries));
+                }
+                
+                return new HashSet<string>();
+            }
+        }
+
+        /// <summary>
+        /// Saves the set of processed log files to the database.
+        /// </summary>
+        private async Task SaveProcessedLogFiles(HashSet<string> processedFiles)
+        {
+            await using (var scope = _services.CreateAsyncScope())
+            {
+                using var dbContext = scope.ServiceProvider.GetRequiredService<DbContext>();
+                var setting = await dbContext.Settings.FirstOrDefaultAsync(t => t.Key == DbSetting.SettingKey_ProcessedLogFiles);
+                
+                if (setting == null)
+                {
+                    setting = new DbSetting { Key = DbSetting.SettingKey_ProcessedLogFiles };
+                    await dbContext.Settings.AddAsync(setting);
+                }
+                
+                setting.Value = string.Join(";", processedFiles);
+                await dbContext.SaveChangesAsync();
+            }
+        }
+
+        /// <summary>
+        /// Processes a complete log file (for rotated/compressed files).
+        /// </summary>
+        private async Task ProcessCompleteLogFile(string filePath, DateTime skipOlderThan, CancellationToken stoppingToken)
+        {
+            _logger.LogInformation("Processing complete log file: {FilePath}", filePath);
+            
+            using var stream = OpenLogFileStream(filePath);
+            var allLines = ReadAllLinesFromStream(stream, stoppingToken).ToList();
+            var parsedLogLines = allLines.Select(line => LanCacheLogLineParser.ParseLogEntry(line)).Where(entry => entry != null).ToList();
+            
+            // Process in batches
+            for (int i = 0; i < parsedLogLines.Count; i += 5000)
+            {
+                var batch = parsedLogLines.Skip(i).Take(5000).ToList();
+                var filteredBatch = batch.Where(entry => entry!.DateTime > skipOlderThan).ToList();
+                
+                if (filteredBatch.Any())
+                {
+                    await ProcessLogBatch(filteredBatch!, stoppingToken);
+                }
+            }
+            
+            _logger.LogInformation("Completed processing log file: {FilePath}, processed {Count} lines", filePath, parsedLogLines.Count);
+        }
+
+        /// <summary>
+        /// Reads all lines from a stream.
+        /// </summary>
+        private IEnumerable<string> ReadAllLinesFromStream(Stream stream, CancellationToken stoppingToken)
+        {
+            using var reader = new StreamReader(stream);
+            string? line;
+            while ((line = reader.ReadLine()) != null)
+            {
+                stoppingToken.ThrowIfCancellationRequested();
+                yield return line;
+            }
+        }
+
+        /// <summary>
+        /// Processes a batch of log entries.
+        /// </summary>
+        private async Task ProcessLogBatch(List<LanCacheLogEntryRaw> logEntries, CancellationToken stoppingToken)
+        {
+            await using (var scope = _services.CreateAsyncScope())
+            {
+                var retryPolicy = Policy
+                    .Handle<DbUpdateException>()
+                    .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                    (exception, timeSpan, context) =>
+                    {
+                        _logger.LogError("An error occurred while trying to save changes: {Message}", exception.Message);
+                    });
+
+                await retryPolicy.ExecuteAsync(async () =>
+                {
+                    using var dbContext = scope.ServiceProvider.GetRequiredService<DbContext>();
+
+                    var filteredLogLines = logEntries.AsEnumerable();
+                    filteredLogLines = filteredLogLines.Where(t => t.CacheIdentifier != "127.0.0.1");
+                    filteredLogLines = filteredLogLines.Where(t => t.Referer != SkipLogLineReferrerString);
+
+                    Dictionary<string, DbDownloadEvent> steamAppDownloadEventsCache = new Dictionary<string, DbDownloadEvent>();
+
+                    foreach (var lanCacheLogLine in filteredLogLines)
+                    {
+                        if (lanCacheLogLine.CacheIdentifier == "steam" && ExcludedAppIds.Contains(lanCacheLogLine.DownloadIdentifier))
+                        {
+                            continue;
+                        }
+                        if (lanCacheLogLine.CacheIdentifier == "steam" && lanCacheLogLine.Request.Contains("/manifest/") && DateTime.Now < lanCacheLogLine.DateTime.AddDays(14))
+                        {
+                            _logger.LogInformation("Found manifest for Depot: {DownloadIdentifier}", lanCacheLogLine.DownloadIdentifier);
+                            var ttt = lanCacheLogLine;
+                            _steamManifestService.TryToDownloadManifest(ttt);
+                        }
+
+                        var cacheKey = $"{lanCacheLogLine.CacheIdentifier}_||_{lanCacheLogLine.DownloadIdentifier}_||_{lanCacheLogLine.RemoteAddress}";
+                        steamAppDownloadEventsCache.TryGetValue(cacheKey, out var cachedEvent);
+
+                        if (cachedEvent == null)
+                        {
+                            cachedEvent = await dbContext.DownloadEvents
+                               .FirstOrDefaultAsync(t =>
+                                   t.CacheIdentifier == lanCacheLogLine.CacheIdentifier &&
+                                   t.DownloadIdentifierString == lanCacheLogLine.DownloadIdentifier &&
+                                   t.ClientIp == lanCacheLogLine.RemoteAddress &&
+                                   t.LastUpdatedAt > lanCacheLogLine.DateTime.AddMinutes(-5)
+                                   );
+                            if (cachedEvent != null)
+                            {
+                                steamAppDownloadEventsCache[cacheKey] = cachedEvent;
+                            }
+                        }
+
+                        if (cachedEvent == null || !(cachedEvent.LastUpdatedAt > lanCacheLogLine.DateTime.AddMinutes(-5)))
+                        {
+                            uint.TryParse(lanCacheLogLine.DownloadIdentifier, out var downloadIdentifierInt);
+                            cachedEvent = new DbDownloadEvent()
+                            {
+                                CacheIdentifier = lanCacheLogLine.CacheIdentifier,
+                                DownloadIdentifierString = lanCacheLogLine.DownloadIdentifier,
+                                DownloadIdentifier = downloadIdentifierInt,
+                                CreatedAt = lanCacheLogLine.DateTime,
+                                LastUpdatedAt = lanCacheLogLine.DateTime,
+                                ClientIp = lanCacheLogLine.RemoteAddress
+                            };
+                            steamAppDownloadEventsCache[cacheKey] = cachedEvent;
+                            await dbContext.DownloadEvents.AddAsync(cachedEvent);
+                        }
+
+                        cachedEvent.LastUpdatedAt = lanCacheLogLine.DateTime;
+                        if (lanCacheLogLine.UpstreamCacheStatus == "HIT")
+                        {
+                            cachedEvent.CacheHitBytes += lanCacheLogLine.BodyBytesSentLong;
+                        }
+                        else
+                        {
+                            cachedEvent.CacheMissBytes += lanCacheLogLine.BodyBytesSentLong;
+                        }
+                    }
+
+                    await dbContext.SaveChangesAsync();
+                    FrontendRefresherService.RequireFrontendRefresh();
+                });
             }
         }
 
