@@ -32,6 +32,7 @@
         public string HttpRange { get; init; }
 
         public required string OriginalLogLine { get; init; }
+
         public string ParseException { get; init; }
 
         public DateTime DateTime { get; private set; }
@@ -70,7 +71,21 @@
             }
             else if (CacheIdentifier == "epicgames")
             {
-                DownloadIdentifier = "unknown";
+                var urlPart = Request.Split(' ')[1];
+                var splitted = urlPart.Split('/', StringSplitOptions.RemoveEmptyEntries);
+
+                if (urlPart.StartsWith("/Builds/Org/") && (splitted.Length > 2))
+                {
+                    DownloadIdentifier = splitted[2];
+                }
+                else if (urlPart.StartsWith("/ias/"))
+                {
+                    DownloadIdentifier = splitted[1];
+                }
+                else
+                {
+                    DownloadIdentifier = "unknown";
+                }
             }
             else if (CacheIdentifier == "riot")
             {
