@@ -32,16 +32,15 @@
         {
             _logger.LogInformation("Retrieving all known AppIds");
 
-            using var steamAppsApi = _steam3Session.Configuration.GetAsyncWebAPIInterface("ISteamApps");
-            var response = await steamAppsApi.CallAsync(HttpMethod.Get, "GetAppList", 2);
+            // Old live API call (broken) replaced by local cached SteamApi data from GitHub release.
+            //using var steamAppsApi = _steam3Session.Configuration.GetAsyncWebAPIInterface("ISteamApps");
+            //var response = await steamAppsApi.CallAsync(HttpMethod.Get, "GetAppList", 2);
 
-            var apiApps = response["apps"].Children.Select(app =>
-                new App()
-                {
-                    appid = app["appid"].AsUnsignedInteger(),
-                    name = app["name"].AsString() ?? "Unknown"
-                }
-                ).ToList();
+            var apiApps = SteamApi.SteamApiData.applist.apps.Select(app => new App
+            {
+                appid = app.appid,
+                name = string.IsNullOrWhiteSpace(app.name) ? "Unknown" : app.name
+            }).ToList();
 
             _cachedAppNames = apiApps.DistinctBy(t => t.appid).ToDictionary(t => t.appid, t => t);
 
